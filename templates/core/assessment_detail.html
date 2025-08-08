@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Avaliação {{ assessment.id }} - Avivamente{% endblock %}
+
+{% block content %}
+<style>
+.z-score-good { color: #27ae60; font-weight: bold; }
+.z-score-warning { color: #f39c12; font-weight: bold; }
+.z-score-danger { color: #e74c3c; font-weight: bold; }
+</style>
+
+<div class="card">
+    <h1><i class="fas fa-clipboard-check"></i> Avaliação Neuropsicológica #{{ assessment.id }}</h1>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">
+        <div>
+            <h3><i class="fas fa-user"></i> Informações do Paciente</h3>
+            <p><strong>Nome:</strong> <a href="/patients/{{ assessment.patient.id }}/">{{ assessment.patient.full_name }}</a></p>
+            <p><strong>Idade:</strong> {{ assessment.patient.age }} anos</p>
+            <p><strong>Escolaridade:</strong> {{ assessment.patient.education_level }} anos</p>
+            <p><strong>Quarto:</strong> {{ assessment.patient.room_number }}</p>
+        </div>
+        
+        <div>
+            <h3><i class="fas fa-info-circle"></i> Informações da Avaliação</h3>
+            <p><strong>Avaliador:</strong> {{ assessment.assessor.get_full_name }}</p>
+            <p><strong>Status:</strong> 
+                {% if assessment.status == 'PENDING' %}
+                    <span class="badge badge-pending">Pendente</span>
+                {% elif assessment.status == 'IN_PROGRESS' %}
+                    <span class="badge badge-progress">Em Andamento</span>
+                {% elif assessment.status == 'COMPLETED' %}
+                    <span class="badge badge-completed">Concluída</span>
+                {% else %}
+                    <span class="badge badge-cancelled">Cancelada</span>
+                {% endif %}
+            </p>
+            <p><strong>Risco Cognitivo:</strong> 
+                {% if assessment.final_risk_score %}
+                    {% if assessment.final_risk_score == 'LOW' %}
+                        <span class="badge badge-completed">Baixo</span>
+                    {% elif assessment.final_risk_score == 'MODERATE' %}
+                        <span class="badge badge-pending">Moderado</span>
+                    {% elif assessment.final_risk_score == 'HIGH' %}
+                        <span class="badge badge-cancelled">Alto</span>
+                    {% elif assessment.final_risk_score == 'CRITICAL' %}
+                        <span class="badge" style="background: #dc3545; color: white;">Crítico</span>
+                    {% endif %}
+                {% else %}
+                    <span style="color: #6c757d;">Não avaliado</span>
+                {% endif %}
+            </p>
+            <p><strong>Criada em:</strong> {{ assessment.created_at|date:"d/m/Y H:i" }}</p>
+            {% if assessment.completed_at %}
+            <p><strong>Concluída em:</strong> {{ assessment.completed_at|date:"d/m/Y H:i" }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div style="margin: 2rem 0;">
+        <a href="/admin/assessments/assessment/{{ assessment.id }}/change/" class="btn btn-warning"><i class="fas fa-edit"></i> Editar Avaliação</a>
+        <a href="/assessments/" class="btn"><i class="fas fa-arrow-left"></i> Voltar para Lista</a>
+    </div>
+</div>
+
+<!-- Resultados dos Testes -->
+<div class="card">
+    <h2><i class="fas fa-chart-line"></i> Resultados dos Testes Neuropsicológicos</h2>
+    
+    <!-- Teste Span de Dígitos -->
+    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem; margin: 1rem 0;">
+        <h3><i class="fas fa-sort-numeric-up"></i> Teste Span de Dígitos</h3>
+        {% if digit_span %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <p><strong>Pontuação Direta:</strong> {{ digit_span.forward_score }}</p>
+                    <p><strong>Span Direto:</strong> {{ digit_span.forward_span }}</p>
+                </div>
+                <div>
+                    <p><strong>Pontuação Inversa:</strong> {{ digit_span.backward_score }}</p>
+                    <p><strong>Span Inverso:</strong> {{ digit_span.backward_span }}</p>
+                </div>
+                <div>
+                    <p><strong>Pontuação Total:</strong> {{ digit_span.total_score }}</p>
+                    {% if digit_span.z_score %}
+                    <p><strong>Z-Score:</strong> 
+                        <span class="z-score-{% if digit_span.z_score >= -1 %}good{% elif digit_span.z_score >= -2 %}warning{% else %}danger{% endif %}">
+                            {{ digit_span.z_score|floatformat:2 }}
+                        </span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Teste não realizado ainda. 
+                <a href="/admin/assessments/digitspanresult/add/?assessment={{ assessment.id }}" class="btn" style="margin-left: 1rem;"><i class="fas fa-plus"></i> Adicionar Resultado</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Teste TMT -->
+    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem; margin: 1rem 0;">
+        <h3> Trail Making Test (TMT)</h3>
+        {% if tmt_result %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <p><strong>TMT-A Tempo:</strong> {{ tmt_result.time_a_seconds|floatformat:1 }}s</p>
+                    <p><strong>TMT-A Erros:</strong> {{ tmt_result.errors_a }}</p>
+                    {% if tmt_result.z_score_a %}
+                    <p><strong>TMT-A Z-Score:</strong> 
+                        <span class="z-score-{% if tmt_result.z_score_a >= -1 %}good{% elif tmt_result.z_score_a >= -2 %}warning{% else %}danger{% endif %}">
+                            {{ tmt_result.z_score_a|floatformat:2 }}
+                        </span>
+                    </p>
+                    {% endif %}
+                </div>
+                <div>
+                    <p><strong>TMT-B Tempo:</strong> {{ tmt_result.time_b_seconds|floatformat:1 }}s</p>
+                    <p><strong>TMT-B Erros:</strong> {{ tmt_result.errors_b }}</p>
+                    {% if tmt_result.z_score_b %}
+                    <p><strong>TMT-B Z-Score:</strong> 
+                        <span class="z-score-{% if tmt_result.z_score_b >= -1 %}good{% elif tmt_result.z_score_b >= -2 %}warning{% else %}danger{% endif %}">
+                            {{ tmt_result.z_score_b|floatformat:2 }}
+                        </span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Teste não realizado ainda. 
+                <a href="/admin/assessments/tmtresult/add/?assessment={{ assessment.id }}" class="btn" style="margin-left: 1rem;"><i class="fas fa-plus"></i> Adicionar Resultado</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Teste Stroop -->
+    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 1.5rem; margin: 1rem 0;">
+        <h3> Teste Stroop</h3>
+        {% if stroop_result %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <p><strong>Cartão 1 (Cores):</strong> {{ stroop_result.card_1_time|floatformat:1 }}s</p>
+                    <p><strong>Erros Cartão 1:</strong> {{ stroop_result.card_1_errors }}</p>
+                </div>
+                <div>
+                    <p><strong>Cartão 2 (Palavras):</strong> {{ stroop_result.card_2_time|floatformat:1 }}s</p>
+                    <p><strong>Erros Cartão 2:</strong> {{ stroop_result.card_2_errors }}</p>
+                </div>
+                <div>
+                    <p><strong>Cartão 3 (Interferência):</strong> {{ stroop_result.interference_time|floatformat:1 }}s</p>
+                    <p><strong>Erros Cartão 3:</strong> {{ stroop_result.card_3_errors }}</p>
+                    {% if stroop_result.z_score %}
+                    <p><strong>Z-Score:</strong> 
+                        <span class="z-score-{% if stroop_result.z_score >= -1 %}good{% elif stroop_result.z_score >= -2 %}warning{% else %}danger{% endif %}">
+                            {{ stroop_result.z_score|floatformat:2 }}
+                        </span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Teste não realizado ainda. 
+                <a href="/admin/assessments/stroopresult/add/?assessment={{ assessment.id }}" class="btn" style="margin-left: 1rem;"><i class="fas fa-plus"></i> Adicionar Resultado</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Interpretação dos Resultados -->
+<div class="card">
+    <h2><i class="fas fa-compass"></i> Interpretação dos Resultados</h2>
+    
+    {% if digit_span or tmt_result or stroop_result %}
+        <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+            <h4><i class="fas fa-clipboard-list"></i> Legenda dos Z-Scores</h4>
+            <ul style="margin-top: 1rem;">
+                <li><span style="color: green; font-weight: bold;">Verde (≥ -1.0):</span> Desempenho normal</li>
+                <li><span style="color: orange; font-weight: bold;">Laranja (-1.0 a -2.0):</span> Déficit leve a moderado</li>
+                <li><span style="color: red; font-weight: bold;">Vermelho (< -2.0):</span> Déficit severo</li>
+            </ul>
+        </div>
+        
+        {% if assessment.final_risk_score %}
+            <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                <h4> Avaliação de Risco Cognitivo</h4>
+                <p style="font-size: 1.1rem; margin-top: 0.5rem;">
+                    Com base nos resultados dos testes neuropsicológicos, o paciente apresenta 
+                    <strong>risco {{ assessment.get_final_risk_score_display|lower }}</strong> para déficit cognitivo.
+                </p>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            Nenhum teste foi realizado ainda. Complete os testes para obter uma interpretação dos resultados.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

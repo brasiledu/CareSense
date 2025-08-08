@@ -1,0 +1,58 @@
+{
+  "tmt_a": {
+    "60-69": {
+      "low_education": {"mean": 38.5, "sd": 15.2}, 
+      "high_education": {"mean": 29.8, "sd": 10.1}
+    },
+    "70-79": {
+      "low_education": {"mean": 55.1, "sd": 21.3}, 
+      "high_education": {"mean": 40.2, "sd": 14.7}
+    },
+    "80+": {
+      "low_education": {"mean": 70.8, "sd": 28.9}, 
+      "high_education": {"mean": 58.4, "sd": 22.1}
+    }
+  },
+  "tmt_b": {
+    "60-69": {
+      "low_education": {"mean": 95.2, "sd": 35.4}, 
+      "high_education": {"mean": 70.1, "sd": 25.8}
+    },
+    "70-79": {
+      "low_education": {"mean": 135.7, "sd": 48.2}, 
+      "high_education": {"mean": 98.3, "sd": 32.1}
+    },
+    "80+": {
+      "low_education": {"mean": 180.5, "sd": 65.7}, 
+      "high_education": {"mean": 140.2, "sd": 45.3}
+    }
+  },
+  "digit_span": {
+    "60-69": {
+      "low_education": {"mean": 10.8, "sd": 2.1}, 
+      "high_education": {"mean": 12.4, "sd": 2.3}
+    },
+    "70-79": {
+      "low_education": {"mean": 9.5, "sd": 2.4}, 
+      "high_education": {"mean": 11.2, "sd": 2.6}
+    },
+    "80+": {
+      "low_education": {"mean": 8.1, "sd": 2.8}, 
+      "high_education": {"mean": 9.8, "sd": 2.9}
+    }
+  },
+  "stroop": {
+    "60-69": {
+      "low_education": {"mean": 45.2, "sd": 12.3}, 
+      "high_education": {"mean": 35.8, "sd": 9.1}
+    },
+    "70-79": {
+      "low_education": {"mean": 58.7, "sd": 16.8}, 
+      "high_education": {"mean": 44.2, "sd": 12.4}
+    },
+    "80+": {
+      "low_education": {"mean": 75.3, "sd": 22.1}, 
+      "high_education": {"mean": 58.9, "sd": 16.7}
+    }
+  }
+}

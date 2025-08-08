@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - CareSense{% endblock %}
+
+{% block content %}
+<div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 3rem 2rem;">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;"><i class="fas fa-brain"></i> CareSense</h1>
+    <p style="font-size: 1.2rem; margin-bottom: 2rem;">Sistema de Avaliação Neuropsicológica</p>
+    <a href="/start_assessment/" class="btn" style="background: white; color: #667eea; font-size: 1.1rem; padding: 1rem 2rem; font-weight: bold;"><i class="fas fa-rocket"></i> INICIAR NOVA AVALIAÇÃO</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_patients|default:0 }}</div>
+        <div class="stat-label">Total de Pacientes</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ total_assessments|default:0 }}</div>
+        <div class="stat-label">Total de Avaliações</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ pending_assessments|default:0 }}</div>
+        <div class="stat-label">Avaliações Pendentes</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ completed_assessments|default:0 }}</div>
+        <div class="stat-label">Avaliações Concluídas</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0;">
+    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/dashboard/'">
+        <i class="fas fa-chart-bar" style="font-size: 2rem; color: #3498db; margin-bottom: 1rem;"></i>
+        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Dashboard</h3>
+        <p style="color: #6c757d;">Visualize estatísticas completas</p>
+    </div>
+    
+    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/patients/'">
+        <i class="fas fa-users" style="font-size: 2rem; color: #27ae60; margin-bottom: 1rem;"></i>
+        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Pacientes</h3>
+        <p style="color: #6c757d;">Gerencie cadastros de pacientes</p>
+    </div>
+    
+    <div style="background: white; padding: 2rem; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="window.location.href='/assessments/'">
+        <i class="fas fa-clipboard-list" style="font-size: 2rem; color: #f39c12; margin-bottom: 1rem;"></i>
+        <h3 style="color: #2c3e50; margin-bottom: 1rem;">Avaliações</h3>
+        <p style="color: #6c757d;">Lista de todas as avaliações</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Avivamente{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Avivamente</h1>
+    <p class="lead">Sistema de Avaliação Neuropsicológica</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_patients }}</div>
+        <div class="stat-label">Total de Pacientes</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.total_assessments }}</div>
+        <div class="stat-label">Total de Avaliações</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.pending_assessments }}</div>
+        <div class="stat-label">Avaliações Pendentes</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-number">{{ stats.completed_assessments }}</div>
+        <div class="stat-label">Avaliações Concluídas</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-bolt"></i> Ações Rápidas</h2>
+    <div style="margin-top: 1rem;">
+        <a href="/start-assessment/" class="btn btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;"><i class="fas fa-brain"></i> Nova Avaliação Neuropsicológica</a>
+        <a href="/patients/" class="btn"><i class="fas fa-users"></i> Ver Pacientes</a>
+        <a href="/assessments/" class="btn"><i class="fas fa-clipboard-list"></i> Ver Avaliações</a>
+        <a href="/admin/" class="btn btn-warning"><i class="fas fa-cog"></i> Administração</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-user-clock"></i> Pacientes Recentes</h2>
+    {% if recent_patients %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Idade</th>
+                    <th>Quarto</th>
+                    <th>Cadastrado em</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in recent_patients %}
+                <tr>
+                    <td><a href="/patients/{{ patient.id }}/">{{ patient.full_name }}</a></td>
+                    <td>{{ patient.age }} anos</td>
+                    <td>{{ patient.room_number }}</td>
+                    <td>{{ patient.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">
+            Nenhum paciente cadastrado ainda.
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-clipboard-check"></i> Avaliações Recentes</h2>
+    {% if recent_assessments %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th>Avaliador</th>
+                    <th>Status</th>
+                    <th>Criada em</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assessment in recent_assessments %}
+                <tr>
+                    <td><a href="/assessments/{{ assessment.id }}/">{{ assessment.patient.full_name }}</a></td>
+                    <td>{{ assessment.assessor.get_full_name }}</td>
+                    <td>
+                        {% if assessment.status == 'PENDING' %}
+                            <span class="badge badge-pending">Pendente</span>
+                        {% elif assessment.status == 'IN_PROGRESS' %}
+                            <span class="badge badge-progress">Em Andamento</span>
+                        {% elif assessment.status == 'COMPLETED' %}
+                            <span class="badge badge-completed">Concluída</span>
+                        {% else %}
+                            <span class="badge badge-cancelled">Cancelada</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ assessment.created_at|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">
+            Nenhuma avaliação registrada ainda.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

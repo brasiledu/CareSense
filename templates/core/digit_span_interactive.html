@@ -1,0 +1,390 @@
+{% load static %}
+{% extends 'base.html' %}
+
+{% block title %}Teste Span de Dígitos - {{ assessment.patient.full_name }} - Avivamente{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1> Teste Span de Dígitos</h1>
+    <div style="background: #e8f4f8; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <strong><i class="fas fa-user"></i> Paciente:</strong> {{ assessment.patient.full_name }} ({{ assessment.patient.age }} anos)<br>
+        <strong> Teste:</strong> Avaliação de Memória de Trabalho
+    </div>
+</div>
+
+<!-- Interface do Teste -->
+<div class="card" id="test-interface">
+    <h2 id="test-phase"> Preparação do Teste</h2>
+    <div id="test-content">
+        <div id="instructions" class="test-section">
+            <h3><i class="fas fa-clipboard-list"></i> Instruções</h3>
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin: 1rem 0;">
+                <p><strong>Span Direto:</strong> "Vou dizer alguns números. Quando eu terminar, repita-os na mesma ordem."</p>
+                <p><strong>Span Inverso:</strong> "Agora vou dizer outros números, mas você deve repeti-los na ordem contrária, de trás para frente."</p>
+                <p style="color: #e67e22;"><strong>⚠️ Importante:</strong> O teste será apresentado automaticamente. Registre as respostas do paciente.</p>
+            </div>
+            <button onclick="startTest()" class="btn btn-success" style="margin-top: 1rem; font-size: 1.1rem; padding: 1rem 2rem;">▶️ Iniciar Teste</button>
+        </div>
+
+        <!-- Seção de apresentação dos dígitos -->
+        <div id="digit-presentation" class="test-section" style="display: none;">
+            <div style="text-align: center; padding: 3rem; background: #f8f9fa; border-radius: 8px;">
+                <div id="sequence-info" style="margin-bottom: 2rem; color: #666;">
+                    <span id="current-phase-display"></span> - <span id="current-level-display"></span>
+                </div>
+                <h2 id="current-sequence" style="font-size: 4rem; letter-spacing: 2rem; color: #2c3e50; margin: 2rem 0; font-family: monospace;"></h2>
+                <div id="sequence-display" style="font-size: 1.5rem; color: #7f8c8d; margin: 1rem 0;"></div>
+                <button id="next-sequence-btn" onclick="nextSequence()" class="btn" style="display: none;">Registrar Resposta ➡️</button>
+            </div>
+        </div>
+
+        <!-- Seção de resposta do paciente -->
+        <div id="response-section" class="test-section" style="display: none;">
+            <h3 id="response-title"> Resposta do Paciente</h3>
+            <div style="background: #f8f9fa; padding: 2rem; border-radius: 8px; margin: 1rem 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <div>
+                        <p><strong>Sequência apresentada:</strong></p>
+                        <div id="presented-sequence" style="font-size: 1.5rem; font-family: monospace; color: #2c3e50; background: white; padding: 1rem; border-radius: 4px;"></div>
+                    </div>
+                    <div>
+                        <p><strong>Resposta esperada:</strong></p>
+                        <div id="expected-response" style="font-size: 1.5rem; font-family: monospace; color: #27ae60; background: white; padding: 1rem; border-radius: 4px;"></div>
+                    </div>
+                </div>
+                
+                <div style="margin: 1.5rem 0;">
+                    <label style="display: block; margin-bottom: 0.5rem;"><strong>Resposta do paciente:</strong></label>
+                    <input type="text" id="patient-response" style="width: 100%; padding: 1rem; border: 2px solid #ddd; border-radius: 4px; font-size: 1.2rem; font-family: monospace;" placeholder="Digite a resposta do paciente (use espaços entre os números)...">
+                </div>
+                
+                <div style="margin: 2rem 0; text-align: center;">
+                    <button onclick="recordResponse(true)" class="btn btn-success" style="font-size: 1.1rem; padding: 1rem 2rem; margin: 0.5rem;">✅ Resposta Correta</button>
+                    <button onclick="recordResponse(false)" class="btn btn-danger" style="font-size: 1.1rem; padding: 1rem 2rem; margin: 0.5rem;">❌ Resposta Incorreta</button>
+                </div>
+                
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button onclick="autoCheck()" class="btn" style="font-size: 0.9rem;"><i class="fas fa-robot"></i> Verificar Automaticamente</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de resultados -->
+        <div id="results-section" class="test-section" style="display: none;">
+            <h3><i class="fas fa-chart-bar"></i> Resultados do Teste</h3>
+            <div id="results-summary" style="background: #e8f5e8; padding: 2rem; border-radius: 8px; margin: 1rem 0;"></div>
+            
+            <form method="POST" id="save-results-form">
+                {% csrf_token %}
+                <input type="hidden" id="forward_score" name="forward_score">
+                <input type="hidden" id="forward_span" name="forward_span">
+                <input type="hidden" id="backward_score" name="backward_score">
+                <input type="hidden" id="backward_span" name="backward_span">
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <button type="submit" class="btn btn-success" style="font-size: 1.2rem; padding: 1.5rem 3rem;">
+                        <i class="fas fa-save"></i> Salvar Resultados
+                    </button>
+                    <a href="{% url 'run_tests' assessment.id %}" class="btn" style="margin-left: 1rem; padding: 1.5rem 3rem;">
+                        ← Voltar aos Testes
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Configuração do teste
+let testConfig = {
+    currentPhase: 'forward', // 'forward' ou 'backward'
+    currentLevel: 2, // Número de dígitos na sequência
+    currentTrial: 0, // Tentativa atual no nível (0 ou 1)
+    responses: {
+        forward: [],
+        backward: []
+    },
+    sequences: {
+        forward: [
+            [2, [5,8], [6,3]], // Nível 2
+            [3, [4,2,7], [6,9,4]], // Nível 3
+            [4, [6,1,9,4], [7,2,8,6]], // Nível 4
+            [5, [4,2,7,3,1], [7,5,8,3,6]], // Nível 5
+            [6, [6,1,9,4,7,3], [3,9,2,4,8,7]], // Nível 6
+            [7, [5,9,1,7,4,2,8], [4,1,7,9,3,8,5]], // Nível 7
+            [8, [5,8,1,9,2,6,4,7], [3,8,2,9,5,1,7,4]], // Nível 8
+            [9, [2,7,5,8,6,3,1,9,4], [7,1,3,9,4,2,5,6,8]] // Nível 9
+        ],
+        backward: [
+            [2, [2,4], [5,7]], // Nível 2
+            [3, [6,2,9], [4,1,5]], // Nível 3
+            [4, [3,2,7,9], [4,9,6,8]], // Nível 4
+            [5, [1,5,2,8,6], [6,1,8,4,3]], // Nível 5
+            [6, [5,3,9,4,1,8], [7,2,4,8,5,6]], // Nível 6
+            [7, [8,1,2,9,3,6,5], [4,7,3,9,1,2,8]], // Nível 7
+            [8, [9,4,3,7,6,2,5,8], [7,2,8,1,9,6,3,5]] // Nível 8
+        ]
+    }
+};
+
+function startTest() {
+    document.getElementById('instructions').style.display = 'none';
+    document.getElementById('test-phase').textContent = 'Span Direto - Nível ' + testConfig.currentLevel;
+    presentSequence();
+}
+
+function presentSequence() {
+    const phase = testConfig.currentPhase;
+    const level = testConfig.currentLevel;
+    const trial = testConfig.currentTrial;
+    
+    // Encontrar a sequência para o nível atual
+    const levelData = testConfig.sequences[phase].find(l => l[0] === level);
+    if (!levelData) {
+        // Não há mais níveis, finalizar fase
+        if (phase === 'forward') {
+            startBackwardPhase();
+        } else {
+            showResults();
+        }
+        return;
+    }
+    
+    const sequence = levelData[trial + 1];
+    
+    // Atualizar displays
+    document.getElementById('current-phase-display').textContent = 
+        phase === 'forward' ? 'Span Direto' : 'Span Inverso';
+    document.getElementById('current-level-display').textContent = 
+        `Nível ${level} - Tentativa ${trial + 1}`;
+    
+    document.getElementById('digit-presentation').style.display = 'block';
+    document.getElementById('response-section').style.display = 'none';
+    document.getElementById('current-sequence').textContent = '';
+    document.getElementById('sequence-display').textContent = 'Preparando apresentação...';
+    
+    // Apresentar sequência dígito por dígito
+    let digitIndex = 0;
+    const presentDigit = () => {
+        if (digitIndex < sequence.length) {
+            document.getElementById('current-sequence').textContent = sequence[digitIndex];
+            document.getElementById('sequence-display').textContent = `Dígito ${digitIndex + 1} de ${sequence.length}`;
+            digitIndex++;
+            setTimeout(presentDigit, 1200); // 1.2 segundos por dígito
+        } else {
+            // Sequência completa
+            document.getElementById('current-sequence').textContent = '✓';
+            document.getElementById('sequence-display').textContent = 'Sequência apresentada! Aguarde a resposta do paciente.';
+            document.getElementById('next-sequence-btn').style.display = 'inline-block';
+            
+            // Preparar seção de resposta
+            prepareResponseSection(sequence);
+        }
+    };
+    
+    setTimeout(presentDigit, 1000); // Delay inicial
+}
+
+function prepareResponseSection(sequence) {
+    const phase = testConfig.currentPhase;
+    const expectedResponse = phase === 'forward' ? 
+        sequence.join(' ') : 
+        sequence.slice().reverse().join(' ');
+    
+    document.getElementById('presented-sequence').textContent = sequence.join(' ');
+    document.getElementById('expected-response').textContent = expectedResponse;
+    document.getElementById('response-title').textContent = 
+        phase === 'forward' ? 'Resposta - Ordem Direta' : 'Resposta - Ordem Inversa';
+}
+
+function nextSequence() {
+    document.getElementById('digit-presentation').style.display = 'none';
+    document.getElementById('response-section').style.display = 'block';
+    document.getElementById('patient-response').value = '';
+    document.getElementById('patient-response').focus();
+    document.getElementById('next-sequence-btn').style.display = 'none';
+}
+
+function autoCheck() {
+    const expected = document.getElementById('expected-response').textContent.trim();
+    const actual = document.getElementById('patient-response').value.trim();
+    const isCorrect = actual === expected;
+    
+    if (actual === '') {
+        alert('Digite primeiro a resposta do paciente!');
+        return;
+    }
+    
+    recordResponse(isCorrect);
+}
+
+function recordResponse(isCorrect) {
+    const phase = testConfig.currentPhase;
+    const level = testConfig.currentLevel;
+    const trial = testConfig.currentTrial;
+    
+    // Registrar resposta
+    testConfig.responses[phase].push({
+        level: level,
+        trial: trial,
+        correct: isCorrect,
+        response: document.getElementById('patient-response').value
+    });
+    
+    console.log(`${phase} - Nível ${level}, Tentativa ${trial + 1}: ${isCorrect ? 'Correto' : 'Incorreto'}`);
+    
+    // Avançar para próxima tentativa ou nível
+    if (trial === 0) {
+        // Primeira tentativa do nível, fazer segunda tentativa
+        testConfig.currentTrial = 1;
+        document.getElementById('test-phase').textContent = 
+            `${phase === 'forward' ? 'Span Direto' : 'Span Inverso'} - Nível ${testConfig.currentLevel}`;
+        presentSequence();
+    } else {
+        // Segunda tentativa, verificar se passou de nível
+        const levelResponses = testConfig.responses[phase].filter(r => r.level === level);
+        const correctCount = levelResponses.filter(r => r.correct).length;
+        
+        if (correctCount >= 1) {
+            // Passou de nível (pelo menos 1 acerto em 2 tentativas)
+            testConfig.currentLevel++;
+            testConfig.currentTrial = 0;
+            document.getElementById('test-phase').textContent = 
+                `${phase === 'forward' ? 'Span Direto' : 'Span Inverso'} - Nível ${testConfig.currentLevel}`;
+            presentSequence();
+        } else {
+            // Não passou de nível, finalizar fase
+            if (phase === 'forward') {
+                startBackwardPhase();
+            } else {
+                showResults();
+            }
+        }
+    }
+}
+
+function startBackwardPhase() {
+    testConfig.currentPhase = 'backward';
+    testConfig.currentLevel = 2;
+    testConfig.currentTrial = 0;
+    
+    document.getElementById('test-phase').textContent = 'Span Inverso - Nível 2';
+    document.getElementById('response-section').style.display = 'none';
+    
+    // Mostrar instruções para fase inversa
+    alert(' Agora vamos fazer o SPAN INVERSO.\n\nDiga ao paciente: "Agora vou falar outros números, mas você deve repeti-los NA ORDEM CONTRÁRIA, de trás para frente."');
+    
+    presentSequence();
+}
+
+function showResults() {
+    document.getElementById('digit-presentation').style.display = 'none';
+    document.getElementById('response-section').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+    document.getElementById('test-phase').textContent = 'Resultados do Teste';
+    
+    // Calcular pontuações
+    const forwardScore = calculateScore('forward');
+    const backwardScore = calculateScore('backward');
+    const forwardSpan = calculateSpan('forward');
+    const backwardSpan = calculateSpan('backward');
+    
+    // Exibir resultados
+    const resultsHtml = `
+        <h4> Pontuações Finais:</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; border: 2px solid #3498db;">
+                <h5> Span Direto:</h5>
+                <p><strong>Pontuação:</strong> ${forwardScore}</p>
+                <p><strong>Span Máximo:</strong> ${forwardSpan}</p>
+            </div>
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; border: 2px solid #e74c3c;">
+                <h5> Span Inverso:</h5>
+                <p><strong>Pontuação:</strong> ${backwardScore}</p>
+                <p><strong>Span Máximo:</strong> ${backwardSpan}</p>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 8px; border: 3px solid #27ae60;">
+            <h4> Pontuação Total: ${forwardScore + backwardScore}</h4>
+        </div>
+    `;
+    
+    document.getElementById('results-summary').innerHTML = resultsHtml;
+    
+    // Preencher formulário
+    document.getElementById('forward_score').value = forwardScore;
+    document.getElementById('forward_span').value = forwardSpan;
+    document.getElementById('backward_score').value = backwardScore;
+    document.getElementById('backward_span').value = backwardSpan;
+}
+
+function calculateScore(phase) {
+    const responses = testConfig.responses[phase];
+    let score = 0;
+    
+    for (let level = 2; level <= 9; level++) {
+        const levelResponses = responses.filter(r => r.level === level);
+        const correctCount = levelResponses.filter(r => r.correct).length;
+        score += correctCount;
+        
+        // Se não acertou nenhuma no nível, parar contagem
+        if (correctCount === 0) break;
+    }
+    
+    return score;
+}
+
+function calculateSpan(phase) {
+    const responses = testConfig.responses[phase];
+    let span = 1; // Span mínimo
+    
+    for (let level = 2; level <= 9; level++) {
+        const levelResponses = responses.filter(r => r.level === level);
+        const correctCount = levelResponses.filter(r => r.correct).length;
+        
+        if (correctCount >= 1) {
+            span = level;
+        } else {
+            break;
+        }
+    }
+    
+    return span;
+}
+
+// Permitir usar Enter para verificar resposta automaticamente
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('patient-response').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            autoCheck();
+        }
+    });
+});
+</script>
+
+<style>
+.test-section {
+    margin: 2rem 0;
+}
+
+#current-sequence {
+    animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+#patient-response:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+</style>
+{% endblock %}
