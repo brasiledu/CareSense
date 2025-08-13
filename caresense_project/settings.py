@@ -107,12 +107,13 @@ WSGI_APPLICATION = 'caresense_project.wsgi.application'
 # https://docs.djangoproject.com/en/3.x/ref/settings/#databases
 
 # Configuração de database com fallback para SQLite em desenvolvimento
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DB_CONN_MAX_AGE = int(os.environ.get('DB_CONN_MAX_AGE', '60'))
+DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL')
 
 if DATABASE_URL and DATABASE_URL != "postgresql://test:test@localhost:5432/test":
     # Produção - PostgreSQL via Railway
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL)
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=DB_CONN_MAX_AGE)
     }
 else:
     # Desenvolvimento - SQLite

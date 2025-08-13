@@ -6,6 +6,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from .models import EvaluatorProfile
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.conf import settings
 
 
 @never_cache
@@ -51,8 +53,12 @@ def login_view(request):
                     
                     messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
                     
-                    # Redirecionar para a página solicitada ou home
-                    next_url = request.GET.get('next')
+                    # Redirecionar para a página solicitada (next) ou home
+                    next_url = request.GET.get('next') or request.POST.get('next')
+                    if next_url and 'evaluators/login' in next_url:
+                        next_url = None
+                    if next_url and not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                        next_url = None
                     if next_url:
                         print(f"[DEBUG] Redirecionando para next_url: {next_url}")
                         return redirect(next_url)
