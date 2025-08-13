@@ -26,7 +26,20 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-for-development')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+# Configuração robusta de ALLOWED_HOSTS
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+
+# Adicionar hosts específicos do Railway se não estiverem
+railway_hosts = [
+    '.railway.app',
+    '.up.railway.app', 
+    'web-production-e669a.up.railway.app'
+]
+
+for host in railway_hosts:
+    if host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(host)
 
 # Application definition
 
