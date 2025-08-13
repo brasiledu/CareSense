@@ -7,6 +7,9 @@ Django==4.2.14
 # API Framework para futuras integrações
 djangorestframework==3.15.2
 
+# Database utilities
+dj-database-url==2.1.0
+
 # Database (PostgreSQL para produção)
 # psycopg2-binary==2.9.9
 
