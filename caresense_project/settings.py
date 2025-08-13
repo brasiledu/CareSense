@@ -180,10 +180,13 @@ LOGOUT_REDIRECT_URL = '/evaluators/login/'
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_REDIRECT_EXEMPT = []
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
     X_FRAME_OPTIONS = 'DENY'
+    # Configurações de HTTPS mais flexíveis para Railway
+    SECURE_SSL_REDIRECT = False  # Railway gerencia HTTPS
+    SESSION_COOKIE_SECURE = False  # Permitir HTTP para Railway
+    CSRF_COOKIE_SECURE = False  # Permitir HTTP para Railway
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+        'https://web-production-e669a.up.railway.app'
+    ]
