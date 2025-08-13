@@ -55,9 +55,11 @@ No painel do Railway, em Variables, adicione:
 ```env
 SECRET_KEY=django-insecure-sua-chave-super-secreta-muito-longa-e-segura-aqui
 DEBUG=false
-ALLOWED_HOSTS=*.railway.app,*.up.railway.app,SEU_SUBDOMINIO.up.railway.app
+ALLOWED_HOSTS=SEU_SUBDOMINIO.up.railway.app,*.railway.app,*.up.railway.app
 CSRF_TRUSTED_ORIGINS=https://SEU_SUBDOMINIO.up.railway.app,https://*.railway.app,https://*.up.railway.app
 ```
+
+Importante: CSRF_TRUSTED_ORIGINS precisa incluir o domínio exato do Railway com https:// (ex.: https://web-production-e669a.up.railway.app).
 
 Observações:
 - Se usar domínio próprio, inclua-o nas duas variáveis (com https:// para CSRF_TRUSTED_ORIGINS).
@@ -114,10 +116,11 @@ python manage.py createsuperuser
 ## 🐛 Troubleshooting
 
 ### 403 CSRF no login
-- Confirme CSRF_TRUSTED_ORIGINS com o domínio exato (https://...)
-- Confirme que o template tem `{% csrf_token %}` (login.html já tem)
+- Em Variables, defina CSRF_TRUSTED_ORIGINS com o domínio exato do app (inclua https://):
+  - Exemplo: CSRF_TRUSTED_ORIGINS=https://web-production-e669a.up.railway.app,https://*.railway.app,https://*.up.railway.app
 - Limpe sessões antigas: `python manage.py clearsessions`
-- Verifique se DEBUG=false em produção
+- Atualize a página de login após qualquer login anterior (token gira)
+- CONFIRA que o formulário de login tem `{% csrf_token %}`
 
 ### DisallowedHost
 - Inclua o host exato do Railway em ALLOWED_HOSTS (sem espaços)

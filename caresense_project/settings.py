@@ -41,6 +41,20 @@ for host in railway_hosts:
     if host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(host)
 
+# CSRF Trusted Origins (sempre definido, usa env se existir)
+_csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
+if _csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_origins_env.split(',') if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = [
+        'https://*.railway.app',
+        'https://*.up.railway.app',
+        'https://web-production-e669a.up.railway.app',
+        'http://localhost',
+        'http://127.0.0.1',
+        'http://0.0.0.0',
+    ]
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -190,14 +204,3 @@ if not DEBUG:
     # SAMESITE para cookies em produção
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE = 'Lax'
-
-    # Permitir configurar origens confiáveis de CSRF via variável de ambiente
-    _csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
-    if _csrf_trusted_origins_env:
-        CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_origins_env.split(',') if o.strip()]
-    else:
-        CSRF_TRUSTED_ORIGINS = [
-            'https://*.railway.app',
-            'https://*.up.railway.app',
-            # 'https://seu-dominio.up.railway.app'  # defina via variável de ambiente em produção
-        ]
