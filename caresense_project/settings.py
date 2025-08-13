@@ -82,7 +82,7 @@ WSGI_APPLICATION = 'caresense_project.wsgi.application'
 # Configuração de database com fallback para SQLite em desenvolvimento
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
+if DATABASE_URL and DATABASE_URL != "postgresql://test:test@localhost:5432/test":
     # Produção - PostgreSQL via Railway
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL)

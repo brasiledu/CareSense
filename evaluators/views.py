@@ -14,41 +14,62 @@ def login_view(request):
     """
     View de login para avaliadores
     """
+    print(f"[DEBUG] Login view chamada - Método: {request.method}")
+    print(f"[DEBUG] Usuário já autenticado: {request.user.is_authenticated}")
+    
     if request.user.is_authenticated:
+        print("[DEBUG] Redirecionando usuário autenticado para dashboard")
         return redirect('dashboard')
     
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         
+        print(f"[DEBUG] Tentativa de login - Username: {username}")
+        
         if username and password:
             user = authenticate(request, username=username, password=password)
+            print(f"[DEBUG] Autenticação resultado: {user is not None}")
+            
             if user is not None:
                 if user.is_active:
+                    print(f"[DEBUG] Login bem-sucedido para: {user.username}")
                     login(request, user)
+                    print(f"[DEBUG] Usuário logado com sucesso: {request.user.is_authenticated}")
                     
                     # Atualizar último login no perfil do avaliador
                     try:
                         profile = user.evaluator_profile
                         profile.update_last_login()
+                        print("[DEBUG] Perfil do avaliador atualizado")
                     except EvaluatorProfile.DoesNotExist:
                         # Criar perfil se não existir
                         EvaluatorProfile.objects.create(user=user)
                         profile = user.evaluator_profile
                         profile.update_last_login()
+                        print("[DEBUG] Perfil do avaliador criado")
                     
                     messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
                     
                     # Redirecionar para a página solicitada ou dashboard
-                    next_url = request.GET.get('next', 'dashboard')
-                    return redirect(next_url)
+                    next_url = request.GET.get('next')
+                    if next_url:
+                        print(f"[DEBUG] Redirecionando para next_url: {next_url}")
+                        return redirect(next_url)
+                    else:
+                        print("[DEBUG] Redirecionando para dashboard")
+                        return redirect('dashboard')
                 else:
+                    print("[DEBUG] Usuário inativo")
                     messages.error(request, 'Sua conta está desativada. Entre em contato com o administrador.')
             else:
+                print("[DEBUG] Credenciais inválidas")
                 messages.error(request, 'Credenciais inválidas. Verifique seu usuário e senha.')
         else:
+            print("[DEBUG] Campos não preenchidos")
             messages.error(request, 'Por favor, preencha todos os campos.')
-    
+
+    print("[DEBUG] Renderizando template de login")
     return render(request, 'users/login.html')
 
 

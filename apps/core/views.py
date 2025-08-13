@@ -14,16 +14,10 @@ from apps.users.models import User
 
 def home(request):
     """Página inicial do Avivamente"""
-    if not request.user.is_authenticated:
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    else:
         return redirect('evaluators:login')
-    
-    context = {
-        'total_patients': Patient.objects.count(),
-        'total_assessments': Assessment.objects.count(),
-        'pending_assessments': Assessment.objects.filter(status='PENDING').count(),
-        'completed_assessments': Assessment.objects.filter(status='COMPLETED').count(),
-    }
-    return render(request, 'core/home.html', context)
 
 @login_required
 def dashboard(request):
