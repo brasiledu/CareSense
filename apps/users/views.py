@@ -1,11 +1,55 @@
-from django.shortcuts import render
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.models import User
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_protect
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .models import User
 from .serializers import UserSerializer
 
+@csrf_protect
+def login_view(request):
+    """View para login de usuários"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Bem-vindo, {user.get_full_name()}!')
+            
+            # Redirecionar para a página solicitada ou dashboard
+            next_url = request.GET.get('next', 'dashboard')
+            return redirect(next_url)
+        else:
+            messages.error(request, 'Nome de usuário ou senha incorretos.')
+    
+    return render(request, 'users/login.html')
+
+@login_required
+def logout_view(request):
+    """View para logout de usuários"""
+    user_name = request.user.get_full_name()
+    logout(request)
+    messages.success(request, f'Até logo, {user_name}!')
+    return redirect('login')
+
+@login_required
+def profile_view(request):
+    """View para visualizar o perfil do usuário"""
+    return render(request, 'users/profile.html', {
+        'user': request.user
+    })
+
+# API Views (mantidas para compatibilidade)
 class UserLoginView(APIView):
     def post(self, request):
         username = request.data.get('username')

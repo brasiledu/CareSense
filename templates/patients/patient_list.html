@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+
+{% block title %}Pacientes - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos para UI/UX tablet-optimized */
+.card {
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.search-form {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-input {
+    flex: 1;
+    min-width: 250px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.table th {
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Nome do paciente com estilo melhorado */
+.patient-name {
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.patient-name:hover {
+    color: #007bff;
+}
+
+.patient-name-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.patient-name-link:hover {
+    color: #0056b3;
+    text-decoration: none;
+    transform: translateX(2px);
+}
+
+.patient-name.clickable {
+    color: #007bff;
+}
+
+.patient-name.clickable:hover {
+    color: #0056b3;
+}
+
+/* Nome do paciente como link para avaliações */
+.patient-name-link {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.patient-name-link:hover {
+    color: #0056b3;
+    text-decoration: none;
+}
+
+/* Dropdown para ações */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-dots {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    color: #6c757d;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-dots:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    min-width: 180px;
+    max-width: 90vw;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1050;
+    border: 1px solid #e9ecef;
+    padding: 0.5rem 0;
+    margin-top: 2px;
+}
+
+/* Responsividade do dropdown */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        min-width: 160px;
+        max-width: 75vw;
+        right: -10px;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-item i {
+        margin-right: 0.5rem;
+        width: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dropdown-menu {
+        min-width: 140px;
+        max-width: 70vw;
+        right: -15px;
+        border-radius: 6px;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-dots {
+        width: 32px;
+        height: 32px;
+        padding: 0.4rem;
+    }
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    color: #495057;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #495057;
+}
+
+.dropdown-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+}
+
+
+
+.dropdown-menu.show {
+    display: block;
+    animation: fadeInDropdown 0.2s ease-out;
+}
+
+.dropdown-menu.dropdown-up {
+    bottom: 100%;
+    top: auto;
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-menu.dropdown-left {
+    right: auto;
+    left: 0;
+}
+
+.dropdown-menu.dropdown-up.show {
+    animation: fadeInDropdownUp 0.2s ease-out;
+}
+
+.dropdown-item {
+    color: #495057;
+    padding: 0.75rem 1.25rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #495057;
+    border-left-color: #007bff;
+    transform: translateX(3px);
+}
+
+.dropdown-item.primary:hover {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-left-color: #2196f3;
+}
+
+.dropdown-item.success:hover {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left-color: #4caf50;
+}
+
+.dropdown-item.warning:hover {
+    background-color: #fff3e0;
+    color: #f57c00;
+    border-left-color: #ff9800;
+}
+
+.dropdown-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+}
+
+/* Badges para contadores */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-info {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.badge-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Cards de estatísticas simplificados */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Responsividade para tablets */
+@media (max-width: 1024px) {
+    .table {
+        font-size: 0.9rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+        display: none;
+    }
+    
+    .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-input {
+        min-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+        display: none;
+    }
+}
+</style>
+
+<div class="card">
+    <h1><i class="fas fa-users"></i> Gerenciamento de Pacientes</h1>
+    
+    <form method="GET" class="search-form">
+        <input type="text" name="search" value="{{ search }}" placeholder="Buscar por nome ou número do quarto..." class="search-input">
+        <button type="submit" class="btn">
+            <i class="fas fa-search"></i> Buscar
+        </button>
+        {% if search %}
+        <a href="/patients/" class="btn btn-warning">
+            <i class="fas fa-times"></i> Limpar
+        </a>
+        {% endif %}
+    </form>
+    
+    {% if patients %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th class="hide-mobile">Idade</th>
+                    <th class="hide-tablet">Escolaridade</th>
+                    <th class="hide-mobile">Quarto</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td>
+                        <a href="/assessments/?patient={{ patient.id }}" class="patient-name-link">
+                            {{ patient.full_name }}
+                        </a>
+                    </td>
+                    <td class="hide-mobile">{{ patient.age }} anos</td>
+                    <td class="hide-tablet">{{ patient.education_grade }}</td>
+                    <td class="hide-mobile">
+                        <span class="badge badge-info">
+                            <i class="fas fa-bed"></i> {{ patient.room_number }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn-dots{% if patient.pending_assessments_count > 0 or patient.in_progress_assessments_count > 0 %} has-urgent-actions{% endif %}" 
+                                    type="button" 
+                                    data-patient-id="{{ patient.id }}" 
+                                    title="{% if patient.pending_assessments_count > 0 %}Paciente com avaliações pendentes{% elif patient.in_progress_assessments_count > 0 %}Paciente com avaliações em andamento{% else %}Ações do paciente{% endif %}">
+                                <i class="fas fa-ellipsis-v"></i>
+                                {% if patient.pending_assessments_count > 0 or patient.in_progress_assessments_count > 0 %}
+                                    <span class="urgent-indicator"></span>
+                                {% endif %}
+                            </button>
+                            <div class="dropdown-menu" id="dropdown-{{ patient.id }}">
+                                <!-- Ações principais -->
+                                <a href="/assessments/?patient={{ patient.id }}" class="dropdown-item primary">
+                                    <i class="fas fa-clipboard-list"></i> Ver Avaliações ({{ patient.assessments.count }})
+                                </a>
+                                
+                                {% if patient.pending_assessments_count > 0 %}
+                                <a href="/assessments/?patient={{ patient.id }}&status=PENDING" class="dropdown-item warning">
+                                    <i class="fas fa-clock"></i> Avaliações Pendentes ({{ patient.pending_assessments_count }})
+                                </a>
+                                {% endif %}
+                                
+                                {% if patient.in_progress_assessments_count > 0 %}
+                                <a href="/assessments/?patient={{ patient.id }}&status=IN_PROGRESS" class="dropdown-item warning">
+                                    <i class="fas fa-play"></i> Em Andamento ({{ patient.in_progress_assessments_count }})
+                                </a>
+                                {% endif %}
+                                
+                                <!-- Divisor visual -->
+                                <div class="dropdown-divider"></div>
+                                
+                                <!-- Ações de gestão -->
+                                <a href="/patients/{{ patient.id }}/" class="dropdown-item">
+                                    <i class="fas fa-user"></i> Perfil do Paciente
+                                </a>
+                                <a href="/admin/patients/patient/{{ patient.id }}/change/" class="dropdown-item">
+                                    <i class="fas fa-edit"></i> Editar Dados
+                                </a>
+                                
+                                <!-- Divisor visual -->
+                                <div class="dropdown-divider"></div>
+                                
+                                <!-- Ação de criação -->
+                                <a href="/admin/assessments/assessment/add/?patient={{ patient.id }}" class="dropdown-item success">
+                                    <i class="fas fa-plus"></i> Nova Avaliação
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            {% if search %}
+                Nenhum paciente encontrado para "{{ search }}".
+            {% else %}
+                Nenhum paciente cadastrado ainda.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-chart-bar"></i> Estatísticas dos Pacientes</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ patients.count }}</div>
+            <div class="stat-label">
+                {% if search %}
+                    Pacientes Encontrados
+                {% else %}
+                    Total de Pacientes
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if not search %}
+        <div class="stat-card">
+            <div class="stat-number">{{ active_assessments_count|default:0 }}</div>
+            <div class="stat-label">
+                Avaliações Ativas
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">{{ patients_without_assessments|default:0 }}</div>
+            <div class="stat-label">
+                Pacientes sem Avaliações
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Função para fechar todos os dropdowns
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+            dropdown.classList.remove('active', 'dropdown-up', 'dropdown-right');
+        });
+    }
+    
+    // Event listeners para os botões de dropdown
+    document.querySelectorAll('.btn-dots').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const dropdown = this.closest('.dropdown');
+            const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+            const isActive = dropdown.classList.contains('active');
+            
+            closeAllDropdowns();
+            
+            if (!isActive) {
+                // Resetar classes de posicionamento
+                dropdown.classList.remove('dropdown-up', 'dropdown-right');
+                
+                // Mostrar temporariamente para calcular dimensões
+                dropdownMenu.style.visibility = 'hidden';
+                dropdown.classList.add('active');
+                
+                const buttonRect = this.getBoundingClientRect();
+                const dropdownRect = dropdownMenu.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const viewportWidth = window.innerWidth;
+                
+                // Verificar espaço vertical (baixo é padrão)
+                const spaceBelow = viewportHeight - buttonRect.bottom;
+                const spaceAbove = buttonRect.top;
+                
+                if (spaceBelow < dropdownRect.height + 10 && spaceAbove > spaceBelow) {
+                    dropdown.classList.add('dropdown-up');
+                }
+                
+                // Verificar espaço horizontal (esquerda é padrão)
+                const spaceRight = viewportWidth - buttonRect.left;
+                
+                if (spaceRight < dropdownRect.width + 10) {
+                    dropdown.classList.add('dropdown-right');
+                }
+                
+                // Restaurar visibilidade
+                dropdownMenu.style.visibility = 'visible';
+            }
+        });
+    });
+    
+    // Fechar dropdowns ao clicar fora
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            closeAllDropdowns();
+        }
+    });
+    
+    // Prevenir fechamento ao clicar dentro do dropdown menu
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Fechar dropdown ao clicar em link
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function() {
+            if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
+                closeAllDropdowns();
+            }
+        });
+    });
+    
+    // Melhorar acessibilidade - fechar com ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeAllDropdowns();
+        }
+    });
+});
+</script>
+{% endblock %}

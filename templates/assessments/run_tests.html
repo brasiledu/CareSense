@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+
+{% block title %}Executar Testes - {{ assessment.patient.full_name }} - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos seguindo o padrão do projeto */
+.tests-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Header da página */
+.tests-header {
+    background: #2c3e50;
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.tests-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.tests-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    margin: 0;
+}
+
+/* Cards padrão */
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+}
+
+.card h2 {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Info do paciente */
+.patient-info {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    border-left: 4px solid #007bff;
+}
+
+.patient-info strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Grid de testes */
+.tests-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.test-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.test-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.test-card.test-completed {
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.test-card.test-pending {
+    border-color: #ffc107;
+    background: #fffef8;
+}
+
+.test-card h3 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.test-card p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 20px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.badge-completed {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+/* Botões */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin: 0.25rem;
+    text-align: center;
+}
+
+.btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    text-decoration: none;
+    color: white;
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-success:hover {
+    background: #1e7e34;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+    color: #212529;
+}
+
+.btn i {
+    margin-right: 0.5rem;
+}
+
+/* Card de conclusão */
+.completion-card {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 2px solid #28a745;
+    text-align: center;
+}
+
+.completion-card h2 {
+    color: #155724;
+}
+
+.completion-card p {
+    color: #155724;
+    margin-bottom: 2rem;
+}
+
+/* Instruções */
+.instructions {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #17a2b8;
+}
+
+.instructions h4 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.instructions ol {
+    margin-left: 2rem;
+    line-height: 1.8;
+}
+
+.instructions li {
+    margin-bottom: 0.5rem;
+}
+
+.instructions strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.alert-note {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    color: #856404;
+    font-weight: 500;
+}
+
+/* Ações */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .tests-container {
+        padding: 0 0.5rem;
+    }
+    
+    .tests-header {
+        padding: 1.5rem;
+    }
+    
+    .tests-title {
+        font-size: 1.7rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .tests-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .test-card {
+        padding: 1.5rem;
+        min-height: 200px;
+    }
+    
+    .card {
+        padding: 1.5rem;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .tests-header {
+        padding: 1rem;
+    }
+    
+    .tests-title {
+        font-size: 1.5rem;
+    }
+    
+    .test-card {
+        padding: 1rem;
+        min-height: 180px;
+    }
+    
+    .card {
+        padding: 1rem;
+    }
+}
+</style>
+
+<div class="tests-container">
+    <!-- Header da página -->
+    <div class="tests-header">
+        <h1 class="tests-title">
+            <i class="fas fa-flask"></i>
+            Bateria de Testes Neuropsicológicos
+        </h1>
+        <p class="tests-subtitle">{{ assessment.patient.full_name }} • Avaliação #{{ assessment.id }}</p>
+    </div>
+
+    <!-- Informações do Paciente -->
+    <div class="card">
+        <h2><i class="fas fa-user"></i> Informações da Avaliação</h2>
+        <div class="patient-info">
+            <strong><i class="fas fa-user"></i> Paciente:</strong> {{ assessment.patient.full_name }} ({{ assessment.patient.age }} anos)<br>
+            <strong><i class="fas fa-calendar"></i> Avaliação ID:</strong> {{ assessment.id }}<br>
+            <strong><i class="fas fa-chart-bar"></i> Status:</strong> {{ assessment.get_status_display }}
+        </div>
+    </div>
+
+    <!-- Progresso dos Testes -->
+    <div class="card">
+        <h2><i class="fas fa-clipboard-list"></i> Progresso dos Testes</h2>
+        
+        <div class="tests-grid">
+            <!-- Teste 1: Digit Span -->
+            <div class="test-card test-{% if tests_completed.digit_span %}completed{% else %}pending{% endif %}">
+                <h3><i class="fas fa-sort-numeric-up"></i> Span de Dígitos</h3>
+                <p>Teste de memória de trabalho</p>
+                {% if tests_completed.digit_span %}
+                    <span class="badge badge-completed"><i class="fas fa-check"></i> Concluído</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_digit_span' assessment.id %}" class="btn" style="font-size: 0.9rem;"><i class="fas fa-redo"></i> Refazer</a>
+                    </div>
+                {% else %}
+                    <span class="badge badge-pending"><i class="fas fa-clock"></i> Pendente</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_digit_span' assessment.id %}" class="btn btn-success"><i class="fas fa-play"></i> Iniciar</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Teste 2: TMT -->
+            <div class="test-card test-{% if tests_completed.tmt %}completed{% else %}pending{% endif %}">
+                <h3><i class="fas fa-target"></i> Trail Making Test</h3>
+                <p>Teste de atenção e flexibilidade</p>
+                {% if tests_completed.tmt %}
+                    <span class="badge badge-completed"><i class="fas fa-check"></i> Concluído</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_tmt' assessment.id %}" class="btn" style="font-size: 0.9rem;"><i class="fas fa-redo"></i> Refazer</a>
+                    </div>
+                {% else %}
+                    <span class="badge badge-pending"><i class="fas fa-clock"></i> Pendente</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_tmt' assessment.id %}" class="btn btn-success"><i class="fas fa-play"></i> Iniciar</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Teste 3: Stroop -->
+            <div class="test-card test-{% if tests_completed.stroop %}completed{% else %}pending{% endif %}">
+                <h3><i class="fas fa-palette"></i> Teste de Stroop</h3>
+                <p>Teste de controle inibitório</p>
+                {% if tests_completed.stroop %}
+                    <span class="badge badge-completed"><i class="fas fa-check"></i> Concluído</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_stroop' assessment.id %}" class="btn" style="font-size: 0.9rem;"><i class="fas fa-redo"></i> Refazer</a>
+                    </div>
+                {% else %}
+                    <span class="badge badge-pending"><i class="fas fa-clock"></i> Pendente</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'run_stroop' assessment.id %}" class="btn btn-success"><i class="fas fa-play"></i> Iniciar</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Conclusão -->
+    {% if all_completed %}
+    <div class="card completion-card">
+        <h2><i class="fas fa-check-circle"></i> Todos os Testes Concluídos!</h2>
+        <p>Todos os testes neuropsicológicos foram realizados. Você pode agora finalizar a avaliação para gerar o relatório final.</p>
+        
+        <div style="margin: 2rem 0;">
+            <a href="{% url 'complete_assessment' assessment.id %}" class="btn btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                <i class="fas fa-clipboard-check"></i> Finalizar Avaliação e Gerar Relatório
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Instruções -->
+    <div class="card">
+        <h2><i class="fas fa-info-circle"></i> Instruções</h2>
+        <div class="instructions">
+            <h4>Como aplicar os testes:</h4>
+            <ol>
+                <li><strong>Span de Dígitos:</strong> Teste a capacidade de repetir sequências de números na ordem direta e inversa</li>
+                <li><strong>Trail Making Test:</strong> Meça o tempo para conectar números (Parte A) e alternar entre números e letras (Parte B)</li>
+                <li><strong>Teste de Stroop:</strong> Avalie o controle inibitório através da nomeação de cores com interferência</li>
+            </ol>
+            
+            <div class="alert-note">
+                <i class="fas fa-exclamation-triangle"></i> Execute os testes na ordem sugerida para melhores resultados.
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="card">
+        <h2><i class="fas fa-cogs"></i> Ações</h2>
+        <div class="actions-grid">
+            <a href="/assessments/{{ assessment.id }}/" class="btn"><i class="fas fa-eye"></i> Ver Detalhes da Avaliação</a>
+            <a href="/patients/{{ assessment.patient.id }}/" class="btn"><i class="fas fa-user"></i> Ver Dados do Paciente</a>
+            <a href="/dashboard/" class="btn btn-warning"><i class="fas fa-home"></i> Voltar ao Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

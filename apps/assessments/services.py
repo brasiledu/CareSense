@@ -96,7 +96,9 @@ class AssessmentScoreCalculator:
     
     def _get_age_group(self, age):
         """Determina o grupo etário baseado na idade"""
-        if 60 <= age <= 69:
+        if 50 <= age <= 59:
+            return "50-59"
+        elif 60 <= age <= 69:
             return "60-69"
         elif 70 <= age <= 79:
             return "70-79"
@@ -105,15 +107,17 @@ class AssessmentScoreCalculator:
     
     def _get_education_group(self, education_years):
         """Determina o grupo educacional baseado nos anos de estudo"""
-        return "high_education" if education_years >= 8 else "low_education"
+        return "high_education" if education_years > 7 else "low_education"
     
     def calculate_z_score(self, raw_score, mean, standard_deviation):
         """
-        Calcula o Z-Score usando a fórmula: Z = (Média - Escore Bruto) / Desvio Padrão
+        Calcula o Z-Score usando a fórmula: Z = (Escore Bruto - Média) / Desvio Padrão
+        Para testes onde maior tempo = pior desempenho (TMT, Stroop): valores positivos indicam déficit
+        Para testes onde maior pontuação = melhor desempenho (Digit Span): valores negativos indicam déficit
         """
         if standard_deviation == 0:
             return 0
-        return (mean - raw_score) / standard_deviation
+        return (raw_score - mean) / standard_deviation
     
     def calculate_tmt_z_scores(self, patient, time_a, time_b, errors_a=0, errors_b=0):
         """

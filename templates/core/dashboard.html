@@ -1,112 +1,541 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Avivamente{% endblock %}
+{% block title %}Dashboard - AvivaMente{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1><i class="fas fa-tachometer-alt"></i> Dashboard Avivamente</h1>
-    <p class="lead">Sistema de Avaliação Neuropsicológica</p>
-</div>
+<style>
+/* Estilos seguindo o padrão do projeto */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-number">{{ stats.total_patients }}</div>
-        <div class="stat-label">Total de Pacientes</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-number">{{ stats.total_assessments }}</div>
-        <div class="stat-label">Total de Avaliações</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-number">{{ stats.pending_assessments }}</div>
-        <div class="stat-label">Avaliações Pendentes</div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-number">{{ stats.completed_assessments }}</div>
-        <div class="stat-label">Avaliações Concluídas</div>
-    </div>
-</div>
+/* Header do dashboard */
+.dashboard-header {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
 
-<div class="card">
-    <h2><i class="fas fa-bolt"></i> Ações Rápidas</h2>
-    <div style="margin-top: 1rem;">
-        <a href="/start-assessment/" class="btn btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;"><i class="fas fa-brain"></i> Nova Avaliação Neuropsicológica</a>
-        <a href="/patients/" class="btn"><i class="fas fa-users"></i> Ver Pacientes</a>
-        <a href="/assessments/" class="btn"><i class="fas fa-clipboard-list"></i> Ver Avaliações</a>
-        <a href="/admin/" class="btn btn-warning"><i class="fas fa-cog"></i> Administração</a>
-    </div>
-</div>
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
 
-<div class="card">
-    <h2><i class="fas fa-user-clock"></i> Pacientes Recentes</h2>
-    {% if recent_patients %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Idade</th>
-                    <th>Quarto</th>
-                    <th>Cadastrado em</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in recent_patients %}
-                <tr>
-                    <td><a href="/patients/{{ patient.id }}/">{{ patient.full_name }}</a></td>
-                    <td>{{ patient.age }} anos</td>
-                    <td>{{ patient.room_number }}</td>
-                    <td>{{ patient.created_at|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-info">
-            Nenhum paciente cadastrado ainda.
+.dashboard-subtitle {
+    color: #6c757d;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+/* Grid de estatísticas */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #007bff;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Grid de gráficos */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    min-height: 350px;
+}
+
+.chart-card.full-width {
+    grid-column: 1 / -1;
+    min-height: 400px;
+}
+
+.chart-container {
+    position: relative;
+    height: 280px;
+    margin-top: 1rem;
+}
+
+.chart-card.full-width .chart-container {
+    height: 320px;
+}
+
+.chart-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.chart-title i {
+    color: #007bff;
+}
+
+/* Seção de atividade recente */
+.recent-activity {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+}
+
+.activity-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.activity-title i {
+    color: #007bff;
+}
+
+.activity-item {
+    padding: 1.5rem;
+    border-left: 4px solid #007bff;
+    background: #f8f9fa;
+    margin-bottom: 1rem;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: #e9ecef;
+    transform: translateX(2px);
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+}
+
+.activity-item strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.activity-item p {
+    margin: 0.5rem 0;
+    color: #6c757d;
+}
+
+.activity-time {
+    color: #6c757d;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 0 0.5rem;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.7rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .chart-card {
+        padding: 1.5rem;
+        min-height: 300px;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+    
+    .recent-activity {
+        padding: 1.5rem;
+    }
+    
+    .activity-item {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header {
+        padding: 1rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+    }
+    
+    .chart-card {
+        padding: 1rem;
+        min-height: 280px;
+    }
+    
+    .chart-container {
+        height: 220px;
+    }
+    
+    .recent-activity {
+        padding: 1rem;
+    }
+    
+    .chart-title,
+    .activity-title {
+        font-size: 1.1rem;
+    }
+}
+</style>
+
+<div class="dashboard-container">
+    <!-- Header do Dashboard -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">
+            <i class="fas fa-tachometer-alt"></i>
+            Dashboard AvivaMente
+        </h1>
+        <p class="dashboard-subtitle">Sistema de Avaliação Neuropsicológica</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_patients|default:"0" }}</div>
+            <div class="stat-label">Total de Pacientes</div>
         </div>
-    {% endif %}
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_assessments|default:"0" }}</div>
+            <div class="stat-label">Total de Avaliações</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.completed_assessments|default:"0" }}</div>
+            <div class="stat-label">Avaliações Concluídas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.pending_assessments|default:"0" }}</div>
+            <div class="stat-label">Avaliações Pendentes</div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="charts-grid">
+        <!-- Gráfico de Status das Avaliações -->
+        <div class="chart-card">
+            <h3 class="chart-title"><i class="fas fa-chart-pie"></i> Status das Avaliações</h3>
+            <div class="chart-container">
+                <canvas id="assessmentStatusChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Avaliações por Teste -->
+        <div class="chart-card">
+            <h3 class="chart-title"><i class="fas fa-chart-bar"></i> Distribuição por Teste</h3>
+            <div class="chart-container">
+                <canvas id="testDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Evolução Temporal -->
+        <div class="chart-card full-width">
+            <h3 class="chart-title"><i class="fas fa-chart-line"></i> Evolução das Avaliações</h3>
+            <div class="chart-container">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Distribuição por Faixa Etária -->
+        <div class="chart-card">
+            <h3 class="chart-title"><i class="fas fa-chart-donut"></i> Pacientes por Faixa Etária</h3>
+            <div class="chart-container">
+                <canvas id="ageDistributionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico de Performance dos Testes -->
+        <div class="chart-card">
+            <h3 class="chart-title"><i class="fas fa-chart-area"></i> Performance dos Testes</h3>
+            <div class="chart-container">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h3 class="chart-title">Atividade Recente</h3>
+        {% if recent_activities %}
+            {% for activity in recent_activities %}
+            <div class="activity-item">
+                <strong>{{ activity.title }}</strong>
+                <p>{{ activity.description }}</p>
+                <span class="activity-time">{{ activity.created_at|timesince }} atrás</span>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="activity-item">
+            <strong>Bem-vindo ao AvivaMente!</strong>
+            <p>Comece realizando sua primeira avaliação de bem-estar.</p>
+            <span class="activity-time">Agora</span>
+        </div>
+        {% endif %}
+    </div>
 </div>
 
-<div class="card">
-    <h2><i class="fas fa-clipboard-check"></i> Avaliações Recentes</h2>
-    {% if recent_assessments %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Paciente</th>
-                    <th>Avaliador</th>
-                    <th>Status</th>
-                    <th>Criada em</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for assessment in recent_assessments %}
-                <tr>
-                    <td><a href="/assessments/{{ assessment.id }}/">{{ assessment.patient.full_name }}</a></td>
-                    <td>{{ assessment.assessor.get_full_name }}</td>
-                    <td>
-                        {% if assessment.status == 'PENDING' %}
-                            <span class="badge badge-pending">Pendente</span>
-                        {% elif assessment.status == 'IN_PROGRESS' %}
-                            <span class="badge badge-progress">Em Andamento</span>
-                        {% elif assessment.status == 'COMPLETED' %}
-                            <span class="badge badge-completed">Concluída</span>
-                        {% else %}
-                            <span class="badge badge-cancelled">Cancelada</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ assessment.created_at|date:"d/m/Y H:i" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-info">
-            Nenhuma avaliação registrada ainda.
-        </div>
-    {% endif %}
-</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Cores do tema
+    const colors = {
+        primary: '#007bff',
+        success: '#28a745',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        secondary: '#6c757d'
+    };
+
+    // Gráfico 1: Status das Avaliações
+    const statusChart = document.getElementById('assessmentStatusChart');
+    if (statusChart) {
+        new Chart(statusChart, {
+            type: 'doughnut',
+            data: {
+                labels: ['Concluídas', 'Pendentes', 'Em Andamento', 'Canceladas'],
+                datasets: [{
+                    data: [15, 8, 3, 1], // Valores de exemplo
+                    backgroundColor: [colors.success, colors.warning, colors.primary, colors.danger],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico 2: Distribuição por Teste
+    const testChart = document.getElementById('testDistributionChart');
+    if (testChart) {
+        new Chart(testChart, {
+            type: 'bar',
+            data: {
+                labels: ['Digit Span', 'TMT', 'Stroop'],
+                datasets: [{
+                    label: 'Avaliações',
+                    data: [12, 8, 7], // Valores de exemplo
+                    backgroundColor: [colors.primary, colors.success, colors.warning],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico 3: Evolução Temporal
+    const timelineChart = document.getElementById('timelineChart');
+    if (timelineChart) {
+        new Chart(timelineChart, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                datasets: [{
+                    label: 'Avaliações Criadas',
+                    data: [3, 5, 2, 8, 4, 6],
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary + '20',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico 4: Faixa Etária
+    const ageChart = document.getElementById('ageDistributionChart');
+    if (ageChart) {
+        new Chart(ageChart, {
+            type: 'doughnut',
+            data: {
+                labels: ['18-30 anos', '31-45 anos', '46-60 anos', '60+ anos'],
+                datasets: [{
+                    data: [8, 12, 6, 1],
+                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.danger],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Gráfico 5: Performance
+    const performanceChart = document.getElementById('performanceChart');
+    if (performanceChart) {
+        new Chart(performanceChart, {
+            type: 'radar',
+            data: {
+                labels: ['Z-Score Médio', 'Taxa Conclusão', 'Tempo Médio', 'Precisão'],
+                datasets: [{
+                    label: 'Performance',
+                    data: [75, 85, 65, 90],
+                    backgroundColor: colors.primary + '20',
+                    borderColor: colors.primary,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}

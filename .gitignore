@@ -159,38 +159,118 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# CareSense specific
+# AvivaMente specific files
 media/
 staticfiles/
 static_collected/
 
+# Configuration files
+.env
+.env.local
+.env.production
+.env.dev
+.env.test
+
+# Local configuration overrides
+local_settings.py
+settings_local.py
+settings_prod.py
+
 # Backup files
 *_backup.py
 *_old.py
+*_backup.html
 urls_backup.py
 urls_old.py
 urls_new.py
 
-# Test files
+# Test e development files
 home_test.html
 home_direct.html
 test_*.py
 *test*.py
+*_test.html
+fixtures/test_*.json
 
-# Development files
+# Development scripts
 assessment_viewer.py
 integration_test.py
 reorganize_project.py
 test_models_script.py
 validate_reorganization.py
+setup_test_data.py
+
+# Documentation temporária
 REORGANIZATION.md
 TABLET_INTERFACE.md
+CHANGELOG_TEMP.md
+MIGRATION_NOTES.md
+
+# Template backups
 digit_span_test_backup.html
+stroop_test_backup.html
+*_backup.html
+templates_backup/
 
 # Log files
 *.log
 logs/
+debug.log
+error.log
+access.log
+django.log
 
-# Database backups
+# Database backups e exports
 *.sql
 *.dump
+*.db_backup
+db_backup_*.sqlite3
+data_export_*.json
+
+# Uploads de usuário
+uploads/
+user_uploads/
+patient_files/
+
+# Cache Django
+cache/
+.cache/
+django_cache/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+temporary_files/
+
+# Static files collected
+static_root/
+staticfiles_build/
+
+# Redis dumps
+dump.rdb
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+.coverage.*
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Profiling
+.prof
+*.prof
+profile_stats/
+
+# Security
+secrets.json
+*.pem
+*.key
+ssl_certificates/

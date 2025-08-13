@@ -7,8 +7,12 @@ urlpatterns = [
     path('dashboard/', core_views.dashboard, name='dashboard'),
     path('patients/', core_views.patient_list, name='patient_list'),
     path('patients/<int:patient_id>/', core_views.patient_detail, name='patient_detail'),
+    path('patients/<int:patient_id>/history/', core_views.patient_history, name='patient_history'),
     path('assessments/', core_views.assessment_list, name='assessment_list'),
     path('assessments/<int:assessment_id>/', core_views.assessment_detail, name='assessment_detail'),
+    
+    # Aplicação de avaliadores
+    path('evaluators/', include('evaluators.urls')),
     
     # Funcionalidade principal - Executar testes
     path('start_assessment/', core_views.start_assessment, name='start_assessment'),

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Avivamente{% endblock %}</title>
+    <title>{% block title %}AvivaMente{% endblock %}</title>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js para gráficos -->
@@ -34,9 +34,9 @@
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
-            justify-content: space-between;
             align-items: center;
             padding: 0 2rem;
+            gap: 1rem;
         }
         
         .navbar-brand {
@@ -49,19 +49,455 @@
         .navbar-nav {
             display: flex;
             list-style: none;
-            gap: 2rem;
+            gap: 0.5rem;
+            margin-left: auto;
+            margin-right: 1rem;
+            align-items: center;
         }
         
-        .navbar-nav a {
+        .navbar-nav a,
+        .navbar-nav .dropdown-toggle {
             color: white;
             text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            padding: 0.75rem 1.25rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
         
-        .navbar-nav a:hover {
+        .navbar-nav a:hover,
+        .navbar-nav .dropdown-toggle:hover {
             background-color: #34495e;
+            transform: translateY(-1px);
+        }
+        
+        .navbar-nav li {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Menu hamburger para mobile */
+        .mobile-menu-toggle {
+            display: none;
+            flex-direction: column;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            gap: 3px;
+            margin-left: auto;
+        }
+        
+        .mobile-menu-toggle span {
+            width: 25px;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        
+        .mobile-menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+        
+        /* Dropdown styles */
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            background: none;
+            border: none;
+            min-height: 44px;
+        }
+        
+        .dropdown-toggle:hover {
+            background-color: #34495e;
+            transform: translateY(-1px);
+        }
+        
+        .dropdown-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            min-width: 220px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            padding: 0.75rem 0;
+            z-index: 1000;
+            margin-top: 0.5rem;
+        }
+
+        .dropdown-menu.dropdown-up {
+            bottom: 100%;
+            top: auto;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+
+        .dropdown-menu.dropdown-right {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+
+        /* Responsividade do dropdown da navbar */
+        @media (max-width: 768px) {
+            .dropdown-menu {
+                min-width: 180px;
+                max-width: 75vw;
+                font-size: 0.85rem;
+            }
+            
+            .dropdown-item {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dropdown-menu {
+                min-width: 160px;
+                max-width: 70vw;
+                border-radius: 6px;
+            }
+            
+            .dropdown-item {
+                padding: 0.5rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        .dropdown.active .dropdown-menu {
+            display: block;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.875rem 1.25rem;
+            color: #2c3e50;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+        }
+        
+        .dropdown-item:hover {
+            background: #e9ecef;
+            text-decoration: none;
+            color: #2c3e50;
+            border-left-color: #007bff;
+            transform: translateX(2px);
+        }
+        
+        .dropdown-item i {
+            margin-right: 0.75rem;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .dropdown-divider {
+            height: 1px;
+            margin: 0.5rem 0;
+            background: #e9ecef;
+        }
+        
+        /* User menu styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+        
+        .user-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-name {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .user-dropdown-menu {
+            right: 0;
+            left: auto;
+        }
+        
+        .logout-item {
+            color: #dc3545 !important;
+        }
+        
+        .logout-item:hover {
+            background: #f8f9fa;
+            color: #dc3545 !important;
+        }
+        
+        /* Dropdown de avaliações com itens pretos */
+        .assessments-dropdown .dropdown-item {
+            color: #000000 !important;
+        }
+        
+        .assessments-dropdown .dropdown-item:hover {
+            background: #e9ecef;
+            color: #000000 !important;
+            border-left-color: #007bff;
+        }
+        
+        /* Mobile sidebar */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            z-index: 9999;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-sidebar.active {
+            left: 0;
+        }
+        
+        .mobile-sidebar-header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mobile-sidebar-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        
+        .close-sidebar:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .mobile-sidebar-content {
+            padding: 1rem 0;
+        }
+        
+        .mobile-user-info {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            margin-bottom: 0;
+            gap: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .mobile-user-avatar i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .mobile-user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .mobile-user-name {
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .mobile-user-role {
+            color: #bdc3c7;
+            font-size: 0.875rem;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            color: #495057;
+            text-decoration: none;
+            transition: background 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .mobile-nav-item:hover {
+            background: #f8f9fa;
+            text-decoration: none;
+            color: #495057;
+        }
+        
+        .mobile-nav-item i {
+            margin-right: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .mobile-nav-section {
+            margin: 0.5rem 0;
+        }
+        
+        .mobile-nav-header {
+            padding: 0.75rem 1rem;
+            background: #e9ecef;
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .mobile-nav-header i {
+            margin-right: 0.75rem;
+        }
+        
+        .mobile-nav-subitem {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            color: #6c757d;
+            text-decoration: none;
+            transition: background 0.3s ease;
+            font-size: 0.9rem;
+        }
+        
+        .mobile-nav-subitem:hover {
+            background: #f8f9fa;
+            text-decoration: none;
+            color: #495057;
+        }
+        
+        .mobile-nav-subitem i {
+            margin-right: 0.75rem;
+            width: 16px;
+            text-align: center;
+        }
+        
+        .mobile-nav-divider {
+            height: 1px;
+            background: #e9ecef;
+            margin: 1rem 0;
+        }
+        
+        .mobile-nav-item.logout {
+            color: #dc3545;
+        }
+        
+        .mobile-nav-item.logout:hover {
+            background: #f8f9fa;
+            color: #dc3545;
+        }
+        
+        .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            display: none;
+        }
+        
+        .mobile-overlay.active {
+            display: block;
+        }
+         /* Responsividade */
+        @media (max-width: 1024px) {
+            .desktop-nav {
+                display: none;
+            }
+            
+            .mobile-menu-toggle {
+                display: flex;
+            }
+            
+            .user-info {
+                display: none;
+            }
+            
+            .navbar-content {
+                justify-content: space-between;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar-content {
+                padding: 0 1rem;
+            }
         }
         
         .container {
@@ -171,31 +607,32 @@
         
         .badge {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
             font-weight: 600;
-            border-radius: 4px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .badge-pending {
-            background: #ffeaa7;
-            color: #2d3436;
+            background-color: #fff3cd;
+            color: #856404;
         }
         
         .badge-progress {
-            background: #74b9ff;
-            color: white;
+            background-color: #cce5ff;
+            color: #004085;
         }
         
         .badge-completed {
-            background: #00b894;
-            color: white;
+            background-color: #d4edda;
+            color: #155724;
         }
         
         .badge-cancelled {
-            background: #e17055;
-            color: white;
+            background-color: #f8d7da;
+            color: #721c24;
         }
         
         .search-form {
@@ -297,15 +734,150 @@
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="/" class="navbar-brand"><i class="fas fa-brain"></i> Avivamente</a>
-            <ul class="navbar-nav">
+            <a href="/" class="navbar-brand"><i class="fas fa-brain"></i> AvivaMente</a>
+            
+            <!-- Menu hamburger para mobile -->
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            {% if user.is_authenticated %}
+            <!-- Menu desktop -->
+            <ul class="navbar-nav desktop-nav">
                 <li><a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="/patients/"><i class="fas fa-users"></i> Pacientes</a></li>
-                <li><a href="/assessments/"><i class="fas fa-clipboard-check"></i> Avaliações</a></li>
-                <li><a href="/start_assessment/"><i class="fas fa-plus-circle"></i> Nova Avaliação</a></li>
-                <li><a href="/admin/"><i class="fas fa-cog"></i> Admin</a></li>
+                
+                <!-- Dropdown de Avaliações -->
+                <li class="dropdown user-dropdown-container assessments-dropdown">
+                    <button class="user-menu-btn">
+                        <i class="fas fa-clipboard-check"></i> Avaliações
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu user-dropdown-menu">
+                        <a href="/assessments/" class="dropdown-item">
+                            <i class="fas fa-list"></i> Todas as Avaliações
+                        </a>
+                        <a href="{% url 'evaluators:my_assessments' %}" class="dropdown-item">
+                            <i class="fas fa-user-md"></i> Minhas Avaliações
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/start_assessment/" class="dropdown-item">
+                            <i class="fas fa-plus-circle"></i> Nova Avaliação
+                        </a>
+                    </div>
+                </li>
             </ul>
+            
+            <!-- Menu do usuário -->
+            <div class="user-info">
+                <div class="dropdown user-dropdown-container">
+                    <button class="user-menu-btn">
+                        <i class="fas fa-user-circle"></i> 
+                        <span class="user-name">{{ user.get_full_name|default:user.username }}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu user-dropdown-menu">
+                        <a href="{% url 'evaluators:profile' %}" class="dropdown-item">
+                            <i class="fas fa-user"></i> Meu Perfil
+                        </a>
+                        <a href="{% url 'evaluators:my_assessments' %}" class="dropdown-item">
+                            <i class="fas fa-clipboard-list"></i> Minhas Avaliações
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="/admin/" class="dropdown-item">
+                            <i class="fas fa-cog"></i> Administração
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="{% url 'evaluators:logout' %}" class="dropdown-item logout-item">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <ul class="navbar-nav desktop-nav">
+                <li><a href="{% url 'evaluators:login' %}"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+            </ul>
+            {% endif %}
         </div>
+        
+        <!-- Menu lateral mobile -->
+        <div class="mobile-sidebar" id="mobileSidebar">
+            <div class="mobile-sidebar-header">
+                <h3><i class="fas fa-brain"></i> AvivaMente</h3>
+                <button class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            {% if user.is_authenticated %}
+            <div class="mobile-sidebar-content">
+                <div class="mobile-user-info">
+                    <div class="mobile-user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="mobile-user-details">
+                        <span class="mobile-user-name">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="mobile-user-role">Avaliador</span>
+                    </div>
+                </div>
+                
+                <nav class="mobile-nav">
+                    <a href="/dashboard/" class="mobile-nav-item">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    <a href="/patients/" class="mobile-nav-item">
+                        <i class="fas fa-users"></i> Pacientes
+                    </a>
+                    
+                    <!-- Seção de Avaliações -->
+                    <div class="mobile-nav-section">
+                        <div class="mobile-nav-header">
+                            <i class="fas fa-clipboard-check"></i> Avaliações
+                        </div>
+                        <a href="/assessments/" class="mobile-nav-subitem">
+                            <i class="fas fa-list"></i> Todas as Avaliações
+                        </a>
+                        <a href="{% url 'evaluators:my_assessments' %}" class="mobile-nav-subitem">
+                            <i class="fas fa-user-md"></i> Minhas Avaliações
+                        </a>
+                        <a href="/start_assessment/" class="mobile-nav-subitem">
+                            <i class="fas fa-plus-circle"></i> Nova Avaliação
+                        </a>
+                    </div>
+                    
+                    <div class="mobile-nav-divider"></div>
+                    
+                    <!-- Menu do usuário no mobile -->
+                    <a href="{% url 'evaluators:profile' %}" class="mobile-nav-item">
+                        <i class="fas fa-user"></i> Meu Perfil
+                    </a>
+                    <a href="/admin/" class="mobile-nav-item">
+                        <i class="fas fa-cog"></i> Administração
+                    </a>
+                    
+                    <div class="mobile-nav-divider"></div>
+                    
+                    <a href="{% url 'evaluators:logout' %}" class="mobile-nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </a>
+                </nav>
+            </div>
+            {% else %}
+            <div class="mobile-sidebar-content">
+                <nav class="mobile-nav">
+                    <a href="{% url 'evaluators:login' %}" class="mobile-nav-item">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Overlay para mobile -->
+        <div class="mobile-overlay" id="mobileOverlay"></div>
     </nav>
     
     {% if messages %}
@@ -335,6 +907,146 @@
                 }, 500);
             });
         }, 5000);
+    </script>
+    
+    <!-- Script para navbar interativa -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos do menu mobile
+            const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            const closeSidebar = document.getElementById('closeSidebar');
+            const mobileOverlay = document.getElementById('mobileOverlay');
+            
+            // Elementos dos dropdowns
+            const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+            const userMenuBtn = document.querySelector('.user-menu-btn');
+            
+            // Função para abrir menu mobile
+            function openMobileMenu() {
+                mobileSidebar.classList.add('active');
+                mobileOverlay.classList.add('active');
+                mobileMenuToggle.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Função para fechar menu mobile
+            function closeMobileMenu() {
+                mobileSidebar.classList.remove('active');
+                mobileOverlay.classList.remove('active');
+                mobileMenuToggle.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            
+            // Event listeners para menu mobile
+            if (mobileMenuToggle) {
+                mobileMenuToggle.addEventListener('click', openMobileMenu);
+            }
+            
+            if (closeSidebar) {
+                closeSidebar.addEventListener('click', closeMobileMenu);
+            }
+            
+            if (mobileOverlay) {
+                mobileOverlay.addEventListener('click', closeMobileMenu);
+            }
+            
+            // Fechar menu mobile ao redimensionar para desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 1024) {
+                    closeMobileMenu();
+                }
+            });
+            
+            // Gerenciamento dos dropdowns com posicionamento inteligente
+            function closeAllDropdowns() {
+                document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+                    dropdown.classList.remove('active', 'dropdown-up', 'dropdown-right');
+                });
+            }
+            
+            // Dropdown do usuário e avaliações
+            const userMenuBtns = document.querySelectorAll('.user-menu-btn');
+            
+            userMenuBtns.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    const dropdown = this.closest('.dropdown');
+                    const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+                    const isActive = dropdown.classList.contains('active');
+                    
+                    closeAllDropdowns();
+                    
+                    if (!isActive) {
+                        // Resetar classes de posicionamento
+                        dropdown.classList.remove('dropdown-up', 'dropdown-right');
+                        
+                        // Mostrar temporariamente para calcular dimensões
+                        dropdownMenu.style.visibility = 'hidden';
+                        dropdown.classList.add('active');
+                        
+                        const buttonRect = btn.getBoundingClientRect();
+                        const dropdownRect = dropdownMenu.getBoundingClientRect();
+                        const viewportHeight = window.innerHeight;
+                        const viewportWidth = window.innerWidth;
+                        
+                        // Verificar espaço vertical (baixo é padrão na navbar)
+                        const spaceBelow = viewportHeight - buttonRect.bottom;
+                        const spaceAbove = buttonRect.top;
+                        
+                        if (spaceBelow < dropdownRect.height + 10 && spaceAbove > spaceBelow) {
+                            dropdown.classList.add('dropdown-up');
+                        }
+                        
+                        // Verificar espaço horizontal (esquerda é padrão na navbar também)
+                        const spaceRight = viewportWidth - buttonRect.left;
+                        
+                        if (spaceRight < dropdownRect.width + 10) {
+                            dropdown.classList.add('dropdown-right');
+                        }
+                        
+                        // Restaurar visibilidade
+                        dropdownMenu.style.visibility = 'visible';
+                    }
+                });
+            });
+            
+            // Fechar dropdowns ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown')) {
+                    closeAllDropdowns();
+                }
+            });
+            
+            // Prevenir fechamento ao clicar dentro do dropdown menu
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+            
+            // Fechar dropdown ao clicar em link (exceto submenus)
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
+                        closeAllDropdowns();
+                    }
+                });
+            });
+            
+            // Auto-hide messages after 5 seconds
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                setTimeout(function() {
+                    message.style.opacity = '0';
+                    message.style.transition = 'opacity 0.5s';
+                    setTimeout(function() {
+                        message.remove();
+                    }, 500);
+                }, 5000);
+            });
+        });
     </script>
 </body>
 </html>

@@ -1,0 +1,653 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ patient.full_name }} - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos para UI/UX tablet-optimized */
+.card {
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    background: white;
+    padding: 2rem;
+    border: 1px solid #e9ecef;
+}
+
+.card h1, .card h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.card h1 {
+    font-size: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.card h2 {
+    font-size: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.info-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.info-section h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.info-value {
+    color: #2c3e50;
+}
+
+.actions-section {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.table th {
+    background: #2c3e50;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #34495e;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
+    transition: background 0.2s ease;
+}
+
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.badge-progress {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.badge-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #17a2b8;
+    background: #d1ecf1;
+    color: #0c5460;
+    margin: 1rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #007bff;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+}
+
+/* Responsividade tablet */
+@media (max-width: 1024px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .actions-section {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+    
+    .hide-tablet {
+        display: none !important;
+    }
+}
+
+/* Dropdown para ações */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-dots {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    color: #6c757d;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-dots:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 180px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1000;
+    border: 1px solid #e9ecef;
+    padding: 0.5rem 0;
+}
+
+.dropdown-menu.show {
+    display: block;
+    animation: fadeInDropdown 0.2s ease-out;
+}
+
+.dropdown-menu.dropdown-up {
+    bottom: 100%;
+    top: auto;
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-menu.dropdown-up.show {
+    animation: fadeInDropdownUp 0.2s ease-out;
+}
+
+.dropdown-menu.dropdown-left {
+    right: auto;
+    left: 0;
+}
+
+@keyframes fadeInDropdown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDropdownUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    color: #495057;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #495057;
+}
+
+.dropdown-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+}
+
+/* Responsividade mobile */
+@media (max-width: 768px) {
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* Responsividade tablet */
+@media (max-width: 1024px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .actions-section {
+        flex-direction: column;
+    }
+    
+    .btn {
+        justify-content: center;
+    }
+    
+    .hide-tablet {
+        display: none !important;
+    }
+}
+</style>
+
+<div class="card">
+    <h1><i class="fas fa-user"></i> {{ patient.full_name }}</h1>
+    
+    <div class="info-grid">
+        <div class="info-section">
+            <h3><i class="fas fa-clipboard"></i> Informações Pessoais</h3>
+            <div class="info-item">
+                <span class="info-label">Nome Completo:</span>
+                <span class="info-value">{{ patient.full_name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Data de Nascimento:</span>
+                <span class="info-value">{{ patient.birth_date|date:"d/m/Y" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Idade:</span>
+                <span class="info-value">{{ patient.age }} anos</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Escolaridade:</span>
+                <span class="info-value">{{ patient.education_grade }}</span>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3><i class="fas fa-hospital"></i> Informações Hospitalares</h3>
+            <div class="info-item">
+                <span class="info-label">Número do Quarto:</span>
+                <span class="info-value">{{ patient.room_number }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Cadastrado em:</span>
+                <span class="info-value">{{ patient.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Última atualização:</span>
+                <span class="info-value">{{ patient.updated_at|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="actions-section">
+        <a href="/admin/patients/patient/{{ patient.id }}/change/" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Editar Paciente
+        </a>
+        <a href="/patients/" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Lista
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-brain"></i> Avaliações Neuropsicológicas</h2>
+    
+    <div class="actions-section" style="border: none; padding: 0; margin-bottom: 1.5rem;">
+        <a href="/admin/assessments/assessment/add/?patient={{ patient.id }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nova Avaliação
+        </a>
+    </div>
+    
+    {% if assessments %}
+        <div style="overflow-x: auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Avaliador</th>
+                        <th>Status</th>
+                        <th>Risco</th>
+                        <th class="hide-mobile">Concluída</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assessment in assessments %}
+                    <tr>
+                        <td>{{ assessment.assessor.get_full_name }}</td>
+                        <td>
+                            {% if assessment.status == 'PENDING' %}
+                                <span class="badge badge-pending">Pendente</span>
+                            {% elif assessment.status == 'IN_PROGRESS' %}
+                                <span class="badge badge-progress">Em Andamento</span>
+                            {% elif assessment.status == 'COMPLETED' %}
+                                <span class="badge badge-completed">Concluída</span>
+                            {% else %}
+                                <span class="badge badge-cancelled">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if assessment.final_risk_score %}
+                                {% if assessment.final_risk_score == 'LOW' %}
+                                    <span class="badge badge-completed">Baixo</span>
+                                {% elif assessment.final_risk_score == 'MODERATE' %}
+                                    <span class="badge badge-pending">Moderado</span>
+                                {% elif assessment.final_risk_score == 'HIGH' %}
+                                    <span class="badge badge-cancelled">Alto</span>
+                                {% elif assessment.final_risk_score == 'CRITICAL' %}
+                                    <span class="badge" style="background: #dc3545; color: white;">Crítico</span>
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="hide-mobile">
+                            {% if assessment.completed_at %}
+                                {{ assessment.completed_at|date:"d/m/Y H:i" }}
+                            {% else %}
+                                <span style="color: #6c757d;">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn-dots" type="button" data-assessment-id="{{ assessment.id }}">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu" id="dropdown-{{ assessment.id }}">
+                                    <a href="/assessments/{{ assessment.id }}/" class="dropdown-item">
+                                        <i class="fas fa-eye"></i> Visualizar Detalhes
+                                    </a>
+                                    {% if assessment.status == 'PENDING' or assessment.status == 'IN_PROGRESS' %}
+                                    <a href="/assessments/{{ assessment.id }}/tests/" class="dropdown-item">
+                                        <i class="fas fa-play"></i> Aplicar Testes
+                                    </a>
+                                    {% endif %}
+                                    {% if assessment.status == 'COMPLETED' %}
+                                    <a href="/assessments/{{ assessment.id }}/report/" class="dropdown-item">
+                                        <i class="fas fa-file-alt"></i> Gerar Relatório
+                                    </a>
+                                    {% endif %}
+                                    <a href="/admin/assessments/assessment/{{ assessment.id }}/change/" class="dropdown-item">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert">
+            <i class="fas fa-info-circle"></i>
+            Este paciente ainda não possui avaliações neuropsicológicas.
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-chart-bar"></i> Resumo de Avaliações</h2>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ assessments.count }}</div>
+            <div class="stat-label">Total de Avaliações</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">
+                {% with completed_count=0 %}
+                    {% for assessment in assessments %}
+                        {% if assessment.status == 'COMPLETED' %}
+                            {% with completed_count=completed_count|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ completed_count }}
+                {% endwith %}
+            </div>
+            <div class="stat-label">Avaliações Concluídas</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-number">
+                {% with pending_count=0 %}
+                    {% for assessment in assessments %}
+                        {% if assessment.status == 'PENDING' or assessment.status == 'IN_PROGRESS' %}
+                            {% with pending_count=pending_count|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ pending_count }}
+                {% endwith %}
+            </div>
+            <div class="stat-label">Avaliações Pendentes</div>
+        </div>
+        
+        {% if assessments %}
+        <div class="stat-card">
+            <div class="stat-number">
+                {% with high_risk_count=0 %}
+                    {% for assessment in assessments %}
+                        {% if assessment.final_risk_score == 'HIGH' or assessment.final_risk_score == 'CRITICAL' %}
+                            {% with high_risk_count=high_risk_count|add:1 %}{% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ high_risk_count }}
+                {% endwith %}
+            </div>
+            <div class="stat-label">Alto Risco</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// JavaScript para controle dos dropdowns inteligentes
+document.addEventListener('DOMContentLoaded', function() {
+    // Gerenciamento dos dropdowns
+    const dropdownButtons = document.querySelectorAll('.btn-dots');
+    
+    dropdownButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const assessmentId = this.getAttribute('data-assessment-id');
+            const dropdown = document.getElementById(`dropdown-${assessmentId}`);
+            const isVisible = dropdown.classList.contains('show');
+            
+            // Fechar todos os dropdowns abertos
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+            
+            if (!isVisible) {
+                // Detectar posição para abrir para cima ou para baixo
+                const buttonRect = this.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const dropdownHeight = 200; // estimativa da altura do dropdown
+                
+                // Se não há espaço suficiente embaixo, abrir para cima
+                if (buttonRect.bottom + dropdownHeight > viewportHeight) {
+                    dropdown.classList.add('dropdown-up');
+                } else {
+                    dropdown.classList.remove('dropdown-up');
+                }
+                
+                // Se não há espaço à direita, abrir à esquerda
+                const buttonLeft = buttonRect.left;
+                const dropdownWidth = 180;
+                if (buttonLeft + dropdownWidth > window.innerWidth) {
+                    dropdown.classList.add('dropdown-left');
+                } else {
+                    dropdown.classList.remove('dropdown-left');
+                }
+                
+                dropdown.classList.add('show');
+            }
+        });
+    });
+    
+    // Fechar dropdowns ao clicar fora
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    });
+    
+    // Prevenir fechamento do dropdown ao clicar dentro dele
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+});
+</script>
+{% endblock %}

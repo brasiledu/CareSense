@@ -1,14 +1,22 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.views import View
+from django.utils import timezone
+from django.http import JsonResponse
+from datetime import datetime, timedelta
+import json
 from apps.patients.models import Patient
 from apps.assessments.models import Assessment, DigitSpanResult, TMTResult, StroopResult
+from apps.assessments.services import score_calculator
 from apps.users.models import User
 
 def home(request):
     """Página inicial do Avivamente"""
+    if not request.user.is_authenticated:
+        return redirect('evaluators:login')
+    
     context = {
         'total_patients': Patient.objects.count(),
         'total_assessments': Assessment.objects.count(),
@@ -17,24 +25,85 @@ def home(request):
     }
     return render(request, 'core/home.html', context)
 
+@login_required
 def dashboard(request):
-    """Dashboard principal do sistema"""
-    recent_patients = Patient.objects.all()[:5]
-    recent_assessments = Assessment.objects.select_related('patient', 'assessor').all()[:10]
+    """Dashboard principal do sistema com gráficos e análises visuais"""
+    
+    # Estatísticas básicas
+    stats = {
+        'total_patients': Patient.objects.count(),
+        'total_assessments': Assessment.objects.count(),
+        'pending_assessments': Assessment.objects.filter(status='PENDING').count(),
+        'in_progress_assessments': Assessment.objects.filter(status='IN_PROGRESS').count(),
+        'completed_assessments': Assessment.objects.filter(status='COMPLETED').count(),
+        'cancelled_assessments': Assessment.objects.filter(status='CANCELLED').count(),
+    }
+    
+    # Dados para gráfico de distribuição por teste
+    test_stats = {
+        'digit_span_count': DigitSpanResult.objects.count(),
+        'tmt_count': TMTResult.objects.count(),
+        'stroop_count': StroopResult.objects.count(),
+    }
+    
+    # Dados para gráfico de evolução temporal (últimos 30 dias)
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=29)
+    
+    timeline_data = []
+    timeline_labels = []
+    
+    for i in range(30):
+        current_date = start_date + timedelta(days=i)
+        day_assessments = Assessment.objects.filter(
+            created_at__date=current_date
+        ).count()
+        timeline_data.append(day_assessments)
+        timeline_labels.append(current_date.strftime('%d/%m'))
+    
+    # Dados para gráfico de distribuição por faixa etária
+    # Como age é uma propriedade calculada, precisamos iterar pelos pacientes
+    all_patients = Patient.objects.all()
+    age_stats = {
+        'age_18_30': 0,
+        'age_31_45': 0,
+        'age_46_60': 0,
+        'age_60_plus': 0,
+    }
+    
+    for patient in all_patients:
+        age = patient.age
+        if 18 <= age <= 30:
+            age_stats['age_18_30'] += 1
+        elif 31 <= age <= 45:
+            age_stats['age_31_45'] += 1
+        elif 46 <= age <= 60:
+            age_stats['age_46_60'] += 1
+        elif age >= 61:
+            age_stats['age_60_plus'] += 1
+    
+    # Dados para gráfico de performance (simulado com dados básicos)
+    total_assessments = stats['total_assessments']
+    completed_assessments = stats['completed_assessments']
+    
+    performance_stats = {
+        'avg_z_score': 75,  # Simulado
+        'completion_rate': round((completed_assessments / total_assessments * 100) if total_assessments > 0 else 0),
+        'avg_time': 85,  # Simulado
+        'accuracy': 90,  # Simulado
+    }
     
     context = {
-        'recent_patients': recent_patients,
-        'recent_assessments': recent_assessments,
-        'stats': {
-            'total_patients': Patient.objects.count(),
-            'total_assessments': Assessment.objects.count(),
-            'pending_assessments': Assessment.objects.filter(status='PENDING').count(),
-            'in_progress_assessments': Assessment.objects.filter(status='IN_PROGRESS').count(),
-            'completed_assessments': Assessment.objects.filter(status='COMPLETED').count(),
-        }
+        'stats': stats,
+        'test_stats': test_stats,
+        'timeline_labels': json.dumps(timeline_labels),
+        'timeline_data': json.dumps(timeline_data),
+        'age_stats': age_stats,
+        'performance_stats': performance_stats,
     }
     return render(request, 'core/dashboard.html', context)
 
+@login_required
 def patient_list(request):
     """Lista de pacientes"""
     search = request.GET.get('search', '')
@@ -46,11 +115,34 @@ def patient_list(request):
             Q(room_number__icontains=search)
         )
     
+    # Adicionar informações sobre avaliações pendentes para cada paciente
+    for patient in patients:
+        # Verificar se tem avaliações pendentes ou em andamento
+        pending_assessments = patient.assessments.filter(
+            status__in=['PENDING', 'IN_PROGRESS']
+        )
+        patient.has_pending_assessments = pending_assessments.exists()
+        
+        # Adicionar contadores por status
+        patient.pending_assessments_count = patient.assessments.filter(status='PENDING').count()
+        patient.in_progress_assessments_count = patient.assessments.filter(status='IN_PROGRESS').count()
+        patient.completed_assessments_count = patient.assessments.filter(status='COMPLETED').count()
+        patient.cancelled_assessments_count = patient.assessments.filter(status='CANCELLED').count()
+    
+    # Estatísticas
+    total_patients = patients.count()
+    patients_without_assessments = patients.filter(assessments__isnull=True).distinct().count()
+    active_assessments_count = Assessment.objects.filter(
+        status__in=['PENDING', 'IN_PROGRESS']
+    ).count()
+    
     context = {
         'patients': patients,
-        'search': search
+        'search': search,
+        'active_assessments_count': active_assessments_count,
+        'patients_without_assessments': patients_without_assessments,
     }
-    return render(request, 'core/patient_list.html', context)
+    return render(request, 'patients/patient_list.html', context)
 
 def patient_detail(request, patient_id):
     """Detalhes de um paciente"""
@@ -61,22 +153,46 @@ def patient_detail(request, patient_id):
         'patient': patient,
         'assessments': assessments
     }
-    return render(request, 'core/patient_detail.html', context)
+    return render(request, 'patients/patient_detail.html', context)
 
 def assessment_list(request):
     """Lista de avaliações"""
     status_filter = request.GET.get('status', '')
+    patient_filter = request.GET.get('patient', '')
     assessments = Assessment.objects.select_related('patient', 'assessor').all()
     
+    # Filtrar por status se especificado
     if status_filter:
         assessments = assessments.filter(status=status_filter)
+    
+    # Filtrar por paciente se especificado
+    if patient_filter:
+        try:
+            patient_id = int(patient_filter)
+            assessments = assessments.filter(patient_id=patient_id)
+        except (ValueError, TypeError):
+            pass
+    
+    # Obter informações do paciente se filtrado
+    selected_patient = None
+    if patient_filter:
+        try:
+            selected_patient = Patient.objects.get(id=int(patient_filter))
+        except (Patient.DoesNotExist, ValueError, TypeError):
+            pass
+    
+    # Buscar todos os pacientes para o seletor
+    all_patients = Patient.objects.all().order_by('full_name')
     
     context = {
         'assessments': assessments,
         'status_filter': status_filter,
+        'patient_filter': patient_filter,
+        'selected_patient': selected_patient,
+        'all_patients': all_patients,
         'status_choices': Assessment.STATUS_CHOICES
     }
-    return render(request, 'core/assessment_list.html', context)
+    return render(request, 'assessments/assessment_list.html', context)
 
 def assessment_detail(request, assessment_id):
     """Detalhes de uma avaliação"""
@@ -108,7 +224,7 @@ def assessment_detail(request, assessment_id):
         'tmt_result': tmt_result,
         'stroop_result': stroop_result,
     }
-    return render(request, 'core/assessment_detail.html', context)
+    return render(request, 'assessments/assessment_detail.html', context)
 
 class PatientListView(View):
     def get(self, request):
@@ -201,7 +317,7 @@ def start_assessment(request):
     context = {
         'patients': patients_pending
     }
-    return render(request, 'core/start_assessment.html', context)
+    return render(request, 'assessments/start_assessment.html', context)
 
 def run_tests(request, assessment_id):
     """Página principal para executar os testes"""
@@ -219,7 +335,7 @@ def run_tests(request, assessment_id):
         'tests_completed': tests_completed,
         'all_completed': all(tests_completed.values()) if tests_completed else False
     }
-    return render(request, 'core/run_tests.html', context)
+    return render(request, 'assessments/run_tests.html', context)
 
 def run_digit_span(request, assessment_id):
     """Executar teste Digit Span"""
@@ -232,14 +348,12 @@ def run_digit_span(request, assessment_id):
         backward_score = int(request.POST.get('backward_score', 0))
         backward_span = int(request.POST.get('backward_span', 0))
         
-        # Calcular Z-score básico (implementação simplificada)
+        # Calcular Z-score usando dados normativos brasileiros
         total_score = forward_score + backward_score
-        age = assessment.patient.age
-        education = assessment.patient.education_level
+        patient = assessment.patient
         
-        # Fórmula simplificada para Z-score
-        expected_score = 10 + (education * 0.2) - ((age - 50) * 0.1)
-        z_score = (total_score - expected_score) / 3.0
+        # Usar o calculador de Z-score apropriado
+        z_score = score_calculator.calculate_digit_span_z_score(patient, total_score)
         
         # Criar ou atualizar resultado
         digit_result, created = DigitSpanResult.objects.get_or_create(
@@ -261,11 +375,15 @@ def run_digit_span(request, assessment_id):
             digit_result.z_score = round(z_score, 2)
             digit_result.save()
         
+        # Atualizar status da avaliação
+        assessment.status = 'IN_PROGRESS'
+        assessment.save()
+        
         messages.success(request, 'Resultado do Digit Span salvo com sucesso!')
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'core/digit_span_test.html', context)
+    return render(request, 'assessments/digit_span_test.html', context)
 
 def run_tmt(request, assessment_id):
     """Executar teste TMT"""
@@ -278,16 +396,13 @@ def run_tmt(request, assessment_id):
         time_b = float(request.POST.get('time_b', 0))
         errors_b = int(request.POST.get('errors_b', 0))
         
-        # Calcular Z-scores básicos
-        age = assessment.patient.age
-        education = assessment.patient.education_level
+        # Calcular Z-scores usando dados normativos brasileiros
+        patient = assessment.patient
         
-        # Fórmulas simplificadas para Z-scores
-        expected_time_a = 30 + (age - 50) * 0.5 - education * 0.5
-        expected_time_b = 75 + (age - 50) * 1.2 - education * 1.0
-        
-        z_score_a = (time_a - expected_time_a) / 15.0
-        z_score_b = (time_b - expected_time_b) / 30.0
+        # Usar o calculador de Z-score apropriado
+        z_score_a, z_score_b = score_calculator.calculate_tmt_z_scores(
+            patient, time_a, time_b, errors_a, errors_b
+        )
         
         # Criar ou atualizar resultado
         tmt_result, created = TMTResult.objects.get_or_create(
@@ -311,11 +426,15 @@ def run_tmt(request, assessment_id):
             tmt_result.z_score_b = round(z_score_b, 2)
             tmt_result.save()
         
+        # Atualizar status da avaliação
+        assessment.status = 'IN_PROGRESS'
+        assessment.save()
+        
         messages.success(request, 'Resultado do TMT salvo com sucesso!')
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'core/tmt_test.html', context)
+    return render(request, 'assessments/tmt_test.html', context)
 
 def run_stroop(request, assessment_id):
     """Executar teste Stroop"""
@@ -330,12 +449,13 @@ def run_stroop(request, assessment_id):
         card_3_time = float(request.POST.get('card_3_time', 0))
         card_3_errors = int(request.POST.get('card_3_errors', 0))
         
-        # Calcular Z-score baseado no tempo de interferência (cartão 3)
-        age = assessment.patient.age
-        education = assessment.patient.education_level
+        # Calcular Z-score usando dados normativos brasileiros
+        patient = assessment.patient
+        # O tempo de interferência é o cartão 3 (card_3_time)
+        interference_time = card_3_time
         
-        expected_time_3 = 45 + (age - 50) * 0.8 - education * 0.6
-        z_score = (card_3_time - expected_time_3) / 20.0
+        # Usar o calculador de Z-score apropriado
+        z_score = score_calculator.calculate_stroop_z_score(patient, interference_time)
         
         # Criar ou atualizar resultado
         stroop_result, created = StroopResult.objects.get_or_create(
@@ -361,11 +481,15 @@ def run_stroop(request, assessment_id):
             stroop_result.z_score = round(z_score, 2)
             stroop_result.save()
         
+        # Atualizar status da avaliação
+        assessment.status = 'IN_PROGRESS'
+        assessment.save()
+        
         messages.success(request, 'Resultado do Stroop salvo com sucesso!')
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'core/stroop_test.html', context)
+    return render(request, 'assessments/stroop_test.html', context)
 
 def complete_assessment(request, assessment_id):
     """Finalizar avaliação e calcular risco global"""
@@ -380,31 +504,140 @@ def complete_assessment(request, assessment_id):
         messages.error(request, 'Todos os testes devem ser realizados antes de finalizar a avaliação.')
         return redirect('run_tests', assessment_id=assessment_id)
     
-    # Calcular risco global baseado nos Z-scores
-    deficits = 0
+    # Usar o sistema de cálculo de risco final
+    try:
+        final_risk = score_calculator.calculate_final_risk_score(assessment_id)
+        if final_risk:
+            messages.success(request, f'Avaliação finalizada! Nível de risco: {assessment.get_final_risk_score_display()}')
+        else:
+            messages.warning(request, 'Avaliação finalizada, mas não foi possível calcular o risco final.')
+    except Exception as e:
+        messages.error(request, f'Erro ao calcular risco final: {str(e)}')
+        # Como fallback, usar a lógica anterior
+        deficits = 0
+        
+        if assessment.digit_span_result.z_score and assessment.digit_span_result.z_score < -1.5:
+            deficits += 1
+        
+        if assessment.tmt_result.z_score_a and assessment.tmt_result.z_score_a > 1.5:
+            deficits += 1
+        if assessment.tmt_result.z_score_b and assessment.tmt_result.z_score_b > 1.5:
+            deficits += 1
+        
+        if assessment.stroop_result.z_score and assessment.stroop_result.z_score > 1.5:
+            deficits += 1
+        
+        # Determinar nível de risco
+        if deficits >= 3:
+            risk_level = 'CRITICAL'
+        elif deficits >= 2:
+            risk_level = 'HIGH'
+        elif deficits >= 1:
+            risk_level = 'MODERATE'
+        else:
+            risk_level = 'LOW'
+        
+        # Finalizar avaliação
+        assessment.final_risk_score = risk_level
+        assessment.mark_completed()
+        
+        messages.success(request, f'Avaliação finalizada! Nível de risco: {assessment.get_final_risk_score_display()}')
     
-    if assessment.digit_span_result.z_score < -1.5:
-        deficits += 1
-    
-    if assessment.tmt_result.z_score_a < -1.5 or assessment.tmt_result.z_score_b < -1.5:
-        deficits += 1
-    
-    if assessment.stroop_result.z_score < -1.5:
-        deficits += 1
-    
-    # Determinar nível de risco
-    if deficits >= 3:
-        risk_level = 'CRITICAL'
-    elif deficits >= 2:
-        risk_level = 'HIGH'
-    elif deficits >= 1:
-        risk_level = 'MODERATE'
-    else:
-        risk_level = 'LOW'
-    
-    # Finalizar avaliação
-    assessment.final_risk_score = risk_level
-    assessment.mark_completed()
-    
-    messages.success(request, f'Avaliação finalizada! Nível de risco: {assessment.get_final_risk_score_display()}')
     return redirect('assessment_detail', assessment_id=assessment_id)
+
+def patient_history(request, patient_id):
+    """Histórico completo do paciente com dashboard de evolução"""
+    patient = get_object_or_404(Patient, id=patient_id)
+    
+    # Buscar todas as avaliações do paciente, ordenadas por data
+    assessments = Assessment.objects.filter(patient=patient).order_by('created_at')
+    
+    # Preparar dados para gráficos de evolução
+    evolution_data = {
+        'dates': [],
+        'digit_span_scores': [],
+        'digit_span_z_scores': [],
+        'tmt_a_times': [],
+        'tmt_b_times': [],
+        'tmt_a_z_scores': [],
+        'tmt_b_z_scores': [],
+        'stroop_scores': [],
+        'stroop_z_scores': [],
+        'risk_scores': []
+    }
+    
+    # Estatísticas gerais
+    stats = {
+        'total_assessments': assessments.count(),
+        'completed_assessments': assessments.filter(status='COMPLETED').count(),
+        'pending_assessments': assessments.filter(status='PENDING').count(),
+        'in_progress_assessments': assessments.filter(status='IN_PROGRESS').count(),
+        'latest_risk': None,
+        'risk_trend': 'stable'  # 'improving', 'worsening', 'stable'
+    }
+    
+    # Coletar dados para gráficos
+    risk_history = []
+    for assessment in assessments.filter(status='COMPLETED'):
+        evolution_data['dates'].append(assessment.created_at.strftime('%d/%m/%Y'))
+        
+        # Dados do Digit Span
+        if hasattr(assessment, 'digit_span_result'):
+            ds = assessment.digit_span_result
+            evolution_data['digit_span_scores'].append(ds.total_score if ds.total_score else 0)
+            evolution_data['digit_span_z_scores'].append(ds.z_score if ds.z_score else 0)
+        else:
+            evolution_data['digit_span_scores'].append(0)
+            evolution_data['digit_span_z_scores'].append(0)
+        
+        # Dados do TMT
+        if hasattr(assessment, 'tmt_result'):
+            tmt = assessment.tmt_result
+            evolution_data['tmt_a_times'].append(tmt.time_a if tmt.time_a else 0)
+            evolution_data['tmt_b_times'].append(tmt.time_b if tmt.time_b else 0)
+            evolution_data['tmt_a_z_scores'].append(tmt.z_score_a if tmt.z_score_a else 0)
+            evolution_data['tmt_b_z_scores'].append(tmt.z_score_b if tmt.z_score_b else 0)
+        else:
+            evolution_data['tmt_a_times'].append(0)
+            evolution_data['tmt_b_times'].append(0)
+            evolution_data['tmt_a_z_scores'].append(0)
+            evolution_data['tmt_b_z_scores'].append(0)
+        
+        # Dados do Stroop
+        if hasattr(assessment, 'stroop_result'):
+            stroop = assessment.stroop_result
+            evolution_data['stroop_scores'].append(stroop.interference_score if stroop.interference_score else 0)
+            evolution_data['stroop_z_scores'].append(stroop.z_score if stroop.z_score else 0)
+        else:
+            evolution_data['stroop_scores'].append(0)
+            evolution_data['stroop_z_scores'].append(0)
+        
+        # Risco numérico para tendência
+        risk_numeric = {'LOW': 1, 'MODERATE': 2, 'HIGH': 3, 'CRITICAL': 4}
+        risk_value = risk_numeric.get(assessment.final_risk_score, 0)
+        evolution_data['risk_scores'].append(risk_value)
+        risk_history.append(risk_value)
+    
+    # Calcular tendência de risco
+    if len(risk_history) >= 2:
+        recent_avg = sum(risk_history[-2:]) / 2
+        older_avg = sum(risk_history[:-2]) / len(risk_history[:-2]) if len(risk_history) > 2 else recent_avg
+        
+        if recent_avg < older_avg - 0.3:
+            stats['risk_trend'] = 'improving'
+        elif recent_avg > older_avg + 0.3:
+            stats['risk_trend'] = 'worsening'
+    
+    # Última avaliação para estatísticas
+    latest_assessment = assessments.filter(status='COMPLETED').last()
+    if latest_assessment and latest_assessment.final_risk_score:
+        stats['latest_risk'] = latest_assessment.final_risk_score
+    
+    context = {
+        'patient': patient,
+        'assessments': assessments,
+        'evolution_data': evolution_data,
+        'stats': stats,
+    }
+    
+    return render(request, 'patients/patient_history.html', context)

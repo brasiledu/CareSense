@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+
+{% block title %}Avaliações - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos para UI/UX tablet-optimized */
+.card {
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.table {
+    border-collapse: collapse;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    overflow: visible;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.table th {
+    background: #2c3e50;
+    color: white;
+    font-weight: 600;
+    padding: 1rem;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Nome do paciente clicável para avaliações pendentes/em andamento */
+.patient-name {
+    color: #2c3e50;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.patient-name-clickable {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.patient-name-clickable:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Dropdown para ações */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.btn-dots {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    color: #6c757d;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-dots:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    min-width: 180px;
+    max-width: 90vw;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    z-index: 1050;
+    border: 1px solid #e9ecef;
+    padding: 0.5rem 0;
+    margin-top: 2px;
+}
+
+/* Responsividade do dropdown */
+@media (max-width: 768px) {
+    .dropdown-menu {
+        min-width: 160px;
+        max-width: 75vw;
+        right: -10px;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-item {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .dropdown-item i {
+        margin-right: 0.5rem;
+        width: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dropdown-menu {
+        min-width: 140px;
+        max-width: 70vw;
+        right: -15px;
+        border-radius: 6px;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 0.7rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-dots {
+        width: 32px;
+        height: 32px;
+        padding: 0.4rem;
+    }
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-item {
+    color: #495057;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #495057;
+}
+
+.dropdown-item i {
+    margin-right: 0.75rem;
+    width: 16px;
+    text-align: center;
+}
+
+/* Badges para status */
+.badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.badge-progress {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.badge-completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge-cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Responsividade para tablets */
+@media (max-width: 1024px) {
+    .table {
+        font-size: 0.9rem;
+    }
+    
+    .table th,
+    .table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table th:nth-child(3),
+    .table td:nth-child(3),
+    .table th:nth-child(5),
+    .table td:nth-child(5) {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+        display: none;
+    }
+}
+</style>
+
+<div class="card">
+    <h1><i class="fas fa-brain"></i> Avaliações Neuropsicológicas</h1>
+    
+    <!-- Filtros -->
+    <form method="GET" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+            <label for="patient-select" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #495057;">
+                <i class="fas fa-user"></i> Selecionar Paciente:
+            </label>
+            <select name="patient" id="patient-select" style="width: 100%; padding: 0.75rem; border: 1px solid #dee2e6; border-radius: 6px; font-size: 1rem; background: white;">
+                <option value="">Todos os pacientes</option>
+                {% for patient in all_patients %}
+                    <option value="{{ patient.id }}" {% if patient_filter == patient.id|stringformat:"s" %}selected{% endif %}>
+                        {{ patient.full_name }} (Quarto {{ patient.room_number }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <button type="submit" class="btn" style="background: #007bff; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; transition: background 0.3s ease;">
+                <i class="fas fa-filter"></i> Filtrar
+            </button>
+            {% if patient_filter %}
+            <a href="/assessments/" class="btn" style="background: #6c757d; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 6px; transition: background 0.3s ease; display: inline-flex; align-items: center;">
+                <i class="fas fa-times"></i> Limpar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+    
+    {% if selected_patient %}
+        <div style="background: #e8f4f8; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #007bff;">
+            <h3 style="margin: 0 0 0.5rem 0; color: #2c3e50;">
+                <i class="fas fa-user-circle"></i> Avaliações de {{ selected_patient.full_name }}
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div>
+                    <strong><i class="fas fa-birthday-cake"></i> Idade:</strong> {{ selected_patient.age }} anos
+                </div>
+                <div>
+                    <strong><i class="fas fa-graduation-cap"></i> Escolaridade:</strong> {{ selected_patient.education_grade }}
+                </div>
+                <div>
+                    <strong><i class="fas fa-bed"></i> Quarto:</strong> {{ selected_patient.room_number }}
+                </div>
+                <div>
+                    <strong><i class="fas fa-clipboard-list"></i> Total de Avaliações:</strong> {{ assessments.count }}
+                </div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <a href="/patients/" class="btn btn-secondary" style="background: #6c757d; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; margin-right: 0.5rem;">
+                    <i class="fas fa-arrow-left"></i> Voltar para Lista de Pacientes
+                </a>
+                <a href="/assessments/" class="btn btn-outline-primary" style="background: transparent; color: #007bff; border: 1px solid #007bff; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">
+                    <i class="fas fa-list"></i> Ver Todas as Avaliações
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if assessments %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Paciente</th>
+                    <th class="hide-mobile">Idade</th>
+                    <th class="hide-tablet">Quarto</th>
+                    <th class="hide-mobile">Avaliador</th>
+                    <th>Status</th>
+                    <th>Risco</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assessment in assessments %}
+                <tr>
+                    <td>
+                        {% if assessment.status == 'PENDING' or assessment.status == 'IN_PROGRESS' %}
+                            <a href="/assessments/{{ assessment.id }}/tests/" class="patient-name-clickable">
+                                {{ assessment.patient.full_name }}
+                                {% if assessment.status == 'PENDING' %}
+                                    <i class="fas fa-clock text-warning" style="margin-left: 0.5rem;" title="Avaliação pendente - clique para aplicar testes"></i>
+                                {% else %}
+                                    <i class="fas fa-play text-primary" style="margin-left: 0.5rem;" title="Avaliação em andamento - clique para continuar"></i>
+                                {% endif %}
+                            </a>
+                        {% else %}
+                            <span class="patient-name">{{ assessment.patient.full_name }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="hide-mobile">{{ assessment.patient.age }} anos</td>
+                    <td class="hide-tablet">{{ assessment.patient.room_number }}</td>
+                    <td class="hide-mobile">{{ assessment.assessor.get_full_name }}</td>
+                    <td>
+                        {% if assessment.status == 'PENDING' %}
+                            <span class="badge badge-pending">Pendente</span>
+                        {% elif assessment.status == 'IN_PROGRESS' %}
+                            <span class="badge badge-progress">Em Andamento</span>
+                        {% elif assessment.status == 'COMPLETED' %}
+                            <span class="badge badge-completed">Concluída</span>
+                        {% else %}
+                            <span class="badge badge-cancelled">Cancelada</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if assessment.final_risk_score %}
+                            {% if assessment.final_risk_score == 'LOW' %}
+                                <span class="badge badge-completed">Baixo</span>
+                            {% elif assessment.final_risk_score == 'MODERATE' %}
+                                <span class="badge badge-pending">Moderado</span>
+                            {% elif assessment.final_risk_score == 'HIGH' %}
+                                <span class="badge badge-cancelled">Alto</span>
+                            {% elif assessment.final_risk_score == 'CRITICAL' %}
+                                <span class="badge" style="background: #dc3545; color: white;">Crítico</span>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn-dots" type="button" data-assessment-id="{{ assessment.id }}">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu" id="dropdown-{{ assessment.id }}">
+                                <a href="/assessments/{{ assessment.id }}/" class="dropdown-item">
+                                    <i class="fas fa-eye"></i> Visualizar
+                                </a>
+                                <a href="/assessments/{{ assessment.id }}/tests/" class="dropdown-item">
+                                    <i class="fas fa-clipboard-list"></i> Aplicar Testes
+                                </a>
+                                <a href="/admin/assessments/assessment/{{ assessment.id }}/change/" class="dropdown-item">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                <a href="/assessments/{{ assessment.id }}/report/" class="dropdown-item">
+                                    <i class="fas fa-file-pdf"></i> Relatório
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            {% if selected_patient %}
+                O paciente {{ selected_patient.full_name }} ainda não possui avaliações registradas.
+                <div style="margin-top: 1rem;">
+                    <a href="/admin/assessments/assessment/add/?patient={{ selected_patient.id }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Criar Nova Avaliação
+                    </a>
+                </div>
+            {% else %}
+                Nenhuma avaliação registrada ainda.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2><i class="fas fa-chart-bar"></i> Estatísticas das Avaliações</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                {{ assessments.count }}
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                Total de Avaliações
+            </div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                {{ assessments|length }}
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                Concluídas
+            </div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 1.5rem; border-radius: 12px; text-align: center;">
+            <div style="font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem;">
+                0
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">
+                Pendentes
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript para funcionalidade do dropdown
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar event listeners para os botões de dropdown
+    document.querySelectorAll('.btn-dots').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const assessmentId = this.getAttribute('data-assessment-id');
+            toggleDropdown(assessmentId);
+        });
+    });
+    
+    // Fechar dropdown quando clicar fora
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    });
+    
+    // Melhorar acessibilidade - fechar com ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+});
+
+function toggleDropdown(assessmentId) {
+    const dropdown = document.getElementById('dropdown-' + assessmentId);
+    const isVisible = dropdown.classList.contains('show');
+    
+    // Fechar todos os dropdowns abertos
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.classList.remove('show');
+    });
+    
+    // Abrir o dropdown clicado se não estava visível
+    if (!isVisible) {
+        dropdown.classList.add('show');
+    }
+}
+</script>
+{% endblock %}

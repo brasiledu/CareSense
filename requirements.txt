@@ -1,46 +1,45 @@
-# CareSense - Sistema de Avaliação Neuropsicológica
-# Requirements File
+# AvivaMente - Sistema de Avaliação Neuropsicológica
+# Requirements File - Atualizado em 13/01/2025
 # 
 # Core framework
 Django==4.2.14
 
-# API Framework
+# API Framework para futuras integrações
 djangorestframework==3.15.2
 
-# Database
-# SQLite é usado por padrão (incluído no Python)
-# Para PostgreSQL em produção, adicionar: psycopg2-binary==2.9.7
+# Database (PostgreSQL para produção)
+# psycopg2-binary==2.9.9
 
 # Static files handling
 whitenoise==6.5.0
 
-# Environment variables
+# Environment variables management
 python-decouple==3.8
 
 # Date/time utilities
 python-dateutil==2.8.2
 
-# Data validation
-jsonschema==4.18.4
-
-# HTTP requests (para integrações futuras)
+# HTTP requests para integrações futuras (HL7 FHIR)
 requests==2.31.0
 
 # Timezone handling
 pytz==2023.3
 
-# Mathematical calculations (para Z-scores)
-numpy==1.24.3
-scipy==1.11.1
-
-# JSON handling (melhor performance)
-ujson==5.8.0
-
-# Production server (opcional)
+# Production WSGI server
 gunicorn==21.2.0
 
-# Development dependencies (comentadas para produção)
-# django-debug-toolbar==4.1.0
-# coverage==7.2.7
-# pytest==7.4.0
+# CORS handling para APIs futuras
+django-cors-headers==4.3.1
+
+# Development e testing dependencies (descomente se necessário)
+# django-debug-toolbar==4.2.0
+# coverage==7.3.0
+# pytest==7.4.2
 # pytest-django==4.5.2
+# django-extensions==3.2.3
+# flake8==6.0.0
+# black==23.7.0
+
+# Mathematical libraries (descomente se implementar cálculos avançados)
+# numpy==1.25.2
+# scipy==1.11.2

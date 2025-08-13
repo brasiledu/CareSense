@@ -1,0 +1,690 @@
+{% extends 'base.html' %}
+
+{% block title %}Teste de Stroop - {{ assessment.patient.full_name }} - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos simplificados seguindo o padrão do projeto */
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+}
+
+.card h1, .card h2 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Área de teste */
+.test-area {
+    background: #f8f9fa;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.timer-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+    margin: 1rem 0;
+    font-family: monospace;
+}
+
+/* Grid de estímulos - Matriz 5x5 */
+.stimulus-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.8rem;
+    max-width: 400px;
+    margin: 1.5rem auto;
+    padding: 1rem;
+}
+
+.stimulus-item {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    border: 2px solid #333;
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.stimulus-item:hover {
+    transform: scale(1.05);
+}
+
+/* Botões */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: #0056b3;
+    text-decoration: none;
+    color: white;
+}
+
+.btn-success { background: #28a745; }
+.btn-success:hover { background: #1e7e34; }
+.btn-danger { background: #dc3545; }
+.btn-danger:hover { background: #c82333; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-warning:hover { background: #e0a800; }
+.btn-secondary { background: #6c757d; }
+.btn-secondary:hover { background: #545b62; }
+
+.btn i {
+    margin-right: 0.5rem;
+}
+
+/* Controles de erro */
+.error-controls {
+    background: #fff3cd;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border-left: 4px solid #ffc107;
+}
+
+.error-count {
+    font-weight: bold;
+    color: #721c24;
+    margin-left: 1rem;
+}
+
+/* Instruções */
+.instruction-box {
+    background: #e8f4f8;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border-left: 4px solid #17a2b8;
+}
+
+.color-examples {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.color-example {
+    width: 50px;
+    height: 35px;
+    border: 2px solid #000;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    font-size: 0.8rem;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+/* Formulário de resultados */
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.result-card {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stimulus-grid {
+        max-width: 320px;
+        gap: 0.6rem;
+    }
+    
+    .stimulus-item {
+        font-size: 0.9rem;
+    }
+    
+    .timer-display {
+        font-size: 1.8rem;
+    }
+    
+    .color-examples {
+        gap: 0.5rem;
+    }
+    
+    .results-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem;
+    }
+    
+    .stimulus-grid {
+        max-width: 280px;
+        gap: 0.4rem;
+    }
+    
+    .stimulus-item {
+        font-size: 0.8rem;
+    }
+    
+    .timer-display {
+        font-size: 1.5rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+}
+</style>
+
+<div class="card">
+    <h1><i class="fas fa-palette"></i> Teste de Stroop</h1>
+    <div style="background: #e8f4f8; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <strong><i class="fas fa-user"></i> Paciente:</strong> {{ assessment.patient.full_name }} ({{ assessment.patient.age }} anos)<br>
+        <strong><i class="fas fa-graduation-cap"></i> Escolaridade:</strong> {{ assessment.patient.education_level }} anos<br>
+        <strong><i class="fas fa-brain"></i> Objetivo:</strong> Avaliação do controle inibitório e atenção seletiva
+    </div>
+</div>
+
+<!-- Interface do Teste Interativo -->
+<div id="testInterface" class="card" style="display: none;">
+    <div class="test-area">
+        <h2 id="currentCard">Cartão 1 - Nomeação de Cores</h2>
+        <div id="timerDisplay" class="timer-display">
+            <i class="fas fa-stopwatch"></i> 00:00
+        </div>
+        <div id="instructionText" class="instruction-box">
+            Nomeie as cores dos retângulos o mais rápido possível
+        </div>
+        
+        <!-- Área de apresentação dos estímulos - Matriz 5x5 -->
+        <div id="stimulusGrid" class="stimulus-grid">
+            <!-- Os 25 estímulos serão gerados aqui -->
+        </div>
+        
+        <div style="margin: 1.5rem 0;">
+            <button id="startBtn" onclick="startCard()" class="btn btn-success">
+                <i class="fas fa-play"></i> Iniciar Cartão
+            </button>
+            <button id="stopBtn" onclick="stopCard()" class="btn btn-danger" style="display: none;">
+                <i class="fas fa-stop"></i> Parar
+            </button>
+            <button id="nextCardBtn" onclick="nextCard()" class="btn btn-success" style="display: none;">
+                <i class="fas fa-arrow-right"></i> Próximo Cartão
+            </button>
+            <button id="finishBtn" onclick="finishStroop()" class="btn btn-success" style="display: none;">
+                <i class="fas fa-check"></i> Finalizar Teste
+            </button>
+        </div>
+        
+        <div id="errorControls" class="error-controls">
+            <button onclick="addError()" class="btn btn-warning">
+                <i class="fas fa-exclamation-triangle"></i> Registrar Erro
+            </button>
+            <span id="errorCount" class="error-count">Erros: 0</span>
+        </div>
+    </div>
+</div>
+
+<!-- Instruções Iniciais -->
+<div id="instructionsCard" class="card">
+    <h2><i class="fas fa-book"></i> Instruções do Teste</h2>
+    
+    <div style="margin: 1.5rem 0;">
+        <h4><i class="fas fa-square"></i> Cartão 1 - Nomeação de Cores</h4>
+        <p>O paciente deve nomear as cores dos retângulos coloridos o mais rápido possível.</p>
+        <p><strong>Matriz:</strong> 5x5 = 25 estímulos coloridos</p>
+        <div class="color-examples">
+            <div class="color-example" style="background: red;">VER</div>
+            <div class="color-example" style="background: blue;">AZUL</div>
+            <div class="color-example" style="background: green;">VER</div>
+            <div class="color-example" style="background: orange;">LAR</div>
+        </div>
+    </div>
+    
+    <div style="margin: 1.5rem 0;">
+        <h4><i class="fas fa-font"></i> Cartão 2 - Leitura de Palavras</h4>
+        <p>O paciente deve ler as palavras de cores em tinta preta o mais rápido possível.</p>
+        <p><strong>Matriz:</strong> 5x5 = 25 palavras em preto</p>
+        <div style="background: white; padding: 1rem; border-radius: 4px; text-align: center; font-family: monospace;">
+            VERMELHO AZUL VERDE LARANJA AZUL VERMELHO VERDE LARANJA
+        </div>
+    </div>
+    
+    <div style="margin: 1.5rem 0;">
+        <h4><i class="fas fa-exchange-alt"></i> Cartão 3 - Interferência (Stroop)</h4>
+        <p>O paciente deve nomear a <strong>cor da tinta</strong>, ignorando a palavra escrita.</p>
+        <p><strong>Matriz:</strong> 5x5 = 25 palavras coloridas com interferência</p>
+        <div style="background: white; padding: 1rem; border-radius: 4px; text-align: center; font-family: monospace;">
+            <span style="color: blue; font-weight: bold;">VERMELHO</span> 
+            <span style="color: red; font-weight: bold;">AZUL</span> 
+            <span style="color: green; font-weight: bold;">LARANJA</span> 
+            <span style="color: orange; font-weight: bold;">VERDE</span>
+        </div>
+        
+        <div style="background: #fff3cd; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+            <strong><i class="fas fa-exclamation-triangle"></i> Importante:</strong> 
+            No Cartão 3, enfatize que deve falar a COR da tinta, não a palavra escrita!
+        </div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 2rem;">
+        <button onclick="showTestInterface()" class="btn btn-success">
+            <i class="fas fa-play-circle"></i> Começar Teste
+        </button>
+        <button onclick="showManualEntry()" class="btn btn-secondary">
+            <i class="fas fa-keyboard"></i> Inserir Resultados Manualmente
+        </button>
+    </div>
+</div>
+
+<!-- Formulário de Resultados -->
+<form method="POST" id="resultsForm" class="card" style="display: none;">
+    {% csrf_token %}
+    <h2><i class="fas fa-clipboard-list"></i> Resultados do Teste</h2>
+    
+    <div class="results-grid">
+        <!-- Cartão 1 -->
+        <div class="result-card">
+            <h4><i class="fas fa-square"></i> Cartão 1 - Cores</h4>
+            <div style="margin: 1rem 0;">
+                <label for="card_1_time">Tempo (segundos):</label>
+                <input type="number" id="card_1_time" name="card_1_time" min="10" max="120" step="0.1" 
+                       class="form-control" readonly>
+            </div>
+            <div style="margin: 1rem 0;">
+                <label for="card_1_errors">Erros:</label>
+                <input type="number" id="card_1_errors" name="card_1_errors" min="0" max="20" value="0" 
+                       class="form-control" readonly>
+            </div>
+        </div>
+        
+        <!-- Cartão 2 -->
+        <div class="result-card">
+            <h4><i class="fas fa-font"></i> Cartão 2 - Palavras</h4>
+            <div style="margin: 1rem 0;">
+                <label for="card_2_time">Tempo (segundos):</label>
+                <input type="number" id="card_2_time" name="card_2_time" min="10" max="120" step="0.1" 
+                       class="form-control" readonly>
+            </div>
+            <div style="margin: 1rem 0;">
+                <label for="card_2_errors">Erros:</label>
+                <input type="number" id="card_2_errors" name="card_2_errors" min="0" max="20" value="0" 
+                       class="form-control" readonly>
+            </div>
+        </div>
+        
+        <!-- Cartão 3 -->
+        <div class="result-card">
+            <h4><i class="fas fa-exchange-alt"></i> Cartão 3 - Interferência</h4>
+            <div style="margin: 1rem 0;">
+                <label for="card_3_time">Tempo (segundos):</label>
+                <input type="number" id="card_3_time" name="card_3_time" min="15" max="300" step="0.1" 
+                       class="form-control" readonly>
+            </div>
+            <div style="margin: 1rem 0;">
+                <label for="card_3_errors">Erros:</label>
+                <input type="number" id="card_3_errors" name="card_3_errors" min="0" max="20" value="0" 
+                       class="form-control" readonly>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 2rem 0; text-align: center;">
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save"></i> Salvar Resultados
+        </button>
+        <a href="{% url 'run_tests' assessment.id %}" class="btn btn-secondary" style="margin-left: 1rem;">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</form>
+
+<!-- Valores de Referência -->
+<div class="card">
+    <h2><i class="fas fa-ruler"></i> Valores de Referência</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+            <h4>Tempos Médios por Idade:</h4>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.5rem; border: 1px solid #ddd;">Idade</th>
+                        <th style="padding: 0.5rem; border: 1px solid #ddd;">Cartão 1</th>
+                        <th style="padding: 0.5rem; border: 1px solid #ddd;">Cartão 2</th>
+                        <th style="padding: 0.5rem; border: 1px solid #ddd;">Cartão 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">18-39</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">20-25s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">18-23s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">35-45s</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">40-59</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">22-28s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">20-26s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">40-55s</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">60-79</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">25-35s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">23-30s</td>
+                        <td style="padding: 0.5rem; border: 1px solid #ddd;">50-70s</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div>
+            <h4>Interpretação:</h4>
+            <ul style="line-height: 1.8;">
+                <li><strong>Efeito Stroop Normal:</strong> Cartão 3 > Cartões 1 e 2</li>
+                <li><strong>Interferência:</strong> (Cartão 3 - Cartão 2)</li>
+                <li><strong>Déficit Severo:</strong> Cartão 3 > 2x Cartão 1</li>
+            </ul>
+            
+            <div style="background: #d1ecf1; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+                <strong><i class="fas fa-brain"></i> O que avalia:</strong><br>
+                • Controle inibitório<br>
+                • Atenção seletiva<br>
+                • Processamento executivo
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variáveis globais do Stroop
+let stroopData = {
+    currentCard: 1,
+    cards: {
+        1: { startTime: null, endTime: null, errors: 0, completed: false },
+        2: { startTime: null, endTime: null, errors: 0, completed: false },
+        3: { startTime: null, endTime: null, errors: 0, completed: false }
+    },
+    timer: null
+};
+
+// Configurações dos cartões
+const cardConfigs = {
+    1: {
+        title: 'Cartão 1 - Nomeação de Cores',
+        instruction: 'Nomeie as cores dos retângulos o mais rápido possível',
+        type: 'colors'
+    },
+    2: {
+        title: 'Cartão 2 - Leitura de Palavras', 
+        instruction: 'Leia as palavras em voz alta o mais rápido possível',
+        type: 'words'
+    },
+    3: {
+        title: 'Cartão 3 - Interferência Stroop',
+        instruction: 'Nomeie a COR da tinta, NÃO a palavra escrita!',
+        type: 'stroop'
+    }
+};
+
+// Cores e palavras para o teste
+const colors = ['red', 'blue', 'green', 'orange'];
+const colorNames = ['VERMELHO', 'AZUL', 'VERDE', 'LARANJA'];
+const colorMap = {
+    'red': 'VERMELHO',
+    'blue': 'AZUL', 
+    'green': 'VERDE',
+    'orange': 'LARANJA'
+};
+
+function showTestInterface() {
+    document.getElementById('instructionsCard').style.display = 'none';
+    document.getElementById('testInterface').style.display = 'block';
+    setupCard(1);
+}
+
+function setupCard(cardNumber) {
+    stroopData.currentCard = cardNumber;
+    const config = cardConfigs[cardNumber];
+    
+    document.getElementById('currentCard').textContent = config.title;
+    document.getElementById('instructionText').textContent = config.instruction;
+    
+    generateStimuli(config.type);
+    updateUI();
+}
+
+function generateStimuli(type) {
+    const grid = document.getElementById('stimulusGrid');
+    grid.innerHTML = '';
+    
+    // Gerar 25 estímulos para matriz 5x5
+    for (let i = 0; i < 25; i++) {
+        const item = document.createElement('div');
+        item.className = 'stimulus-item';
+        
+        if (type === 'colors') {
+            // Cartão 1: Retângulos coloridos
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            item.style.backgroundColor = color;
+            item.style.color = 'white';
+            item.textContent = '';
+        } else if (type === 'words') {
+            // Cartão 2: Palavras em preto
+            const word = colorNames[Math.floor(Math.random() * colorNames.length)];
+            item.style.backgroundColor = 'white';
+            item.style.color = 'black';
+            item.textContent = word;
+            item.style.fontSize = '0.9rem';
+        } else if (type === 'stroop') {
+            // Cartão 3: Palavras coloridas (interferência)
+            const word = colorNames[Math.floor(Math.random() * colorNames.length)];
+            let color;
+            do {
+                color = colors[Math.floor(Math.random() * colors.length)];
+            } while (colorMap[color] === word); // Garantir incongruência
+            
+            item.style.backgroundColor = 'white';
+            item.style.color = color;
+            item.textContent = word;
+            item.style.fontSize = '0.9rem';
+            item.style.fontWeight = 'bold';
+        }
+        
+        grid.appendChild(item);
+    }
+}
+
+function startCard() {
+    const cardNum = stroopData.currentCard;
+    stroopData.cards[cardNum].startTime = Date.now();
+    stroopData.cards[cardNum].errors = 0;
+    
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'inline-block';
+    
+    startTimer();
+    updateErrorCount();
+}
+
+function stopCard() {
+    const cardNum = stroopData.currentCard;
+    stroopData.cards[cardNum].endTime = Date.now();
+    stroopData.cards[cardNum].completed = true;
+    
+    stopTimer();
+    
+    const time = (stroopData.cards[cardNum].endTime - stroopData.cards[cardNum].startTime) / 1000;
+    const errors = stroopData.cards[cardNum].errors;
+    
+    // Salvar resultados
+    document.getElementById(`card_${cardNum}_time`).value = time.toFixed(1);
+    document.getElementById(`card_${cardNum}_errors`).value = errors;
+    
+    document.getElementById('stopBtn').style.display = 'none';
+    
+    if (cardNum < 3) {
+        document.getElementById('nextCardBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('finishBtn').style.display = 'inline-block';
+    }
+    
+    showMessage(`Cartão ${cardNum} concluído! Tempo: ${time.toFixed(1)}s, Erros: ${errors}`);
+}
+
+function nextCard() {
+    if (stroopData.currentCard < 3) {
+        document.getElementById('nextCardBtn').style.display = 'none';
+        setupCard(stroopData.currentCard + 1);
+    }
+}
+
+function finishStroop() {
+    document.getElementById('testInterface').style.display = 'none';
+    document.getElementById('resultsForm').style.display = 'block';
+}
+
+function addError() {
+    const cardNum = stroopData.currentCard;
+    if (stroopData.cards[cardNum].startTime && !stroopData.cards[cardNum].completed) {
+        stroopData.cards[cardNum].errors++;
+        updateErrorCount();
+    }
+}
+
+function updateErrorCount() {
+    const cardNum = stroopData.currentCard;
+    const errors = stroopData.cards[cardNum].errors;
+    document.getElementById('errorCount').textContent = `Erros: ${errors}`;
+}
+
+function updateUI() {
+    document.getElementById('startBtn').style.display = 'inline-block';
+    document.getElementById('stopBtn').style.display = 'none';
+    document.getElementById('nextCardBtn').style.display = 'none';
+    document.getElementById('finishBtn').style.display = 'none';
+    updateTimerDisplay(0);
+    updateErrorCount();
+}
+
+function startTimer() {
+    stroopData.timer = setInterval(() => {
+        const cardNum = stroopData.currentCard;
+        if (stroopData.cards[cardNum].startTime) {
+            const elapsed = (Date.now() - stroopData.cards[cardNum].startTime) / 1000;
+            updateTimerDisplay(elapsed);
+        }
+    }, 100);
+}
+
+function stopTimer() {
+    if (stroopData.timer) {
+        clearInterval(stroopData.timer);
+        stroopData.timer = null;
+    }
+}
+
+function updateTimerDisplay(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const centisecs = Math.floor((seconds % 1) * 100);
+    document.getElementById('timerDisplay').innerHTML = 
+        `<i class="fas fa-stopwatch"></i> ${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${centisecs.toString().padStart(2, '0')}`;
+}
+
+function showMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 2rem;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        background: #28a745;
+    `;
+    messageDiv.textContent = text;
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        if (document.body.contains(messageDiv)) {
+            document.body.removeChild(messageDiv);
+        }
+    }, 3000);
+}
+
+// Função para mostrar entrada manual
+function showManualEntry() {
+    document.getElementById('instructionsCard').style.display = 'none';
+    document.getElementById('resultsForm').style.display = 'block';
+    
+    // Habilitar campos para entrada manual
+    document.getElementById('card_1_time').removeAttribute('readonly');
+    document.getElementById('card_1_errors').removeAttribute('readonly');
+    document.getElementById('card_2_time').removeAttribute('readonly');
+    document.getElementById('card_2_errors').removeAttribute('readonly');
+    document.getElementById('card_3_time').removeAttribute('readonly');
+    document.getElementById('card_3_errors').removeAttribute('readonly');
+    
+    // Marcar como obrigatórios
+    document.getElementById('card_1_time').setAttribute('required', 'required');
+    document.getElementById('card_2_time').setAttribute('required', 'required');
+    document.getElementById('card_3_time').setAttribute('required', 'required');
+}
+
+// Cleanup ao sair da página
+window.addEventListener('beforeunload', () => {
+    stopTimer();
+});
+</script>
+{% endblock %}
