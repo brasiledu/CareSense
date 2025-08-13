@@ -13,11 +13,17 @@ from apps.assessments.services import score_calculator
 from apps.users.models import User
 
 def home(request):
-    """Página inicial do Avivamente"""
+    """Página inicial do Avivamente.
+    Autenticado -> dashboard; Anônimo -> login.
+    """
     if request.user.is_authenticated:
         return redirect('dashboard')
     else:
         return redirect('evaluators:login')
+
+# Healthcheck simples para o Railway
+def healthz(request):
+    return JsonResponse({"status": "ok"})
 
 @login_required
 def dashboard(request):

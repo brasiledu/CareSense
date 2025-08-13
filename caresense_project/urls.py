@@ -4,6 +4,7 @@ from apps.core import views as core_views
 
 urlpatterns = [
     path('', core_views.home, name='home'),  # Página inicial
+    path('healthz/', core_views.healthz, name='healthz'),
     path('dashboard/', core_views.dashboard, name='dashboard'),
     path('patients/', core_views.patient_list, name='patient_list'),
     path('patients/<int:patient_id>/', core_views.patient_detail, name='patient_detail'),

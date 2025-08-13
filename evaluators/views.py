@@ -18,8 +18,8 @@ def login_view(request):
     print(f"[DEBUG] Usuário já autenticado: {request.user.is_authenticated}")
     
     if request.user.is_authenticated:
-        print("[DEBUG] Redirecionando usuário autenticado para dashboard")
-        return redirect('dashboard')
+        print("[DEBUG] Redirecionando usuário autenticado para home")
+        return redirect('home')
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -51,14 +51,14 @@ def login_view(request):
                     
                     messages.success(request, f'Bem-vindo, {user.get_full_name() or user.username}!')
                     
-                    # Redirecionar para a página solicitada ou dashboard
+                    # Redirecionar para a página solicitada ou home
                     next_url = request.GET.get('next')
                     if next_url:
                         print(f"[DEBUG] Redirecionando para next_url: {next_url}")
                         return redirect(next_url)
                     else:
-                        print("[DEBUG] Redirecionando para dashboard")
-                        return redirect('dashboard')
+                        print("[DEBUG] Redirecionando para home")
+                        return redirect('home')
                 else:
                     print("[DEBUG] Usuário inativo")
                     messages.error(request, 'Sua conta está desativada. Entre em contato com o administrador.')

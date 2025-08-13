@@ -15,7 +15,6 @@ Este guia contém todas as instruções para fazer deploy do sistema AvivaMente 
 ### 1. `Procfile`
 ```
 web: gunicorn caresense_project.wsgi --log-file -
-release: python manage.py migrate --noinput
 ```
 
 ### 2. `runtime.txt`
@@ -44,99 +43,104 @@ git push origin main
 
 ### 2. Configurar no Railway
 
-1. **Acesse**: https://railway.app/dashboard
-2. **Crie novo projeto**: "Deploy from GitHub repo"
-3. **Selecione**: brasiledu/CareSense.git
-4. **Branch**: main
+1. Acesse: https://railway.app/dashboard
+2. Crie novo projeto: Deploy from GitHub repo
+3. Selecione o repositório
+4. Branch: main
 
 ### 3. Configurar Variáveis de Ambiente
 
-No painel do Railway, vá em **Variables** e adicione:
+No painel do Railway, em Variables, adicione:
 
 ```env
 SECRET_KEY=django-insecure-sua-chave-super-secreta-muito-longa-e-segura-aqui
 DEBUG=false
-ALLOWED_HOSTS=*.railway.app,*.up.railway.app
+ALLOWED_HOSTS=*.railway.app,*.up.railway.app,SEU_SUBDOMINIO.up.railway.app
+CSRF_TRUSTED_ORIGINS=https://SEU_SUBDOMINIO.up.railway.app,https://*.railway.app,https://*.up.railway.app
 ```
+
+Observações:
+- Se usar domínio próprio, inclua-o nas duas variáveis (com https:// para CSRF_TRUSTED_ORIGINS).
+- Em produção, os cookies usam SameSite=Lax por padrão.
 
 ### 4. Adicionar PostgreSQL
 
 1. No dashboard do Railway
-2. Clique em **"+ New"**
-3. Selecione **"Database"** → **"PostgreSQL"**
-4. A variável `DATABASE_URL` será criada automaticamente
+2. Clique em + New
+3. Selecione Database → PostgreSQL
+4. A variável DATABASE_URL será criada automaticamente
 
 ### 5. Redeploy
 
 Após configurar as variáveis, force um redeploy:
-- Vá em **Deployments**
-- Clique em **"Deploy Latest"**
+- Vá em Deployments
+- Clique em Deploy Latest
 
 ## 🔍 Verificações Pós-Deploy
 
-### 1. Migrações (Automáticas)
-As migrações são executadas automaticamente pelo `Procfile`.
+### 1. Migrações
+Execute no Shell do Railway (deploy iniciado com sucesso):
+```bash
+python manage.py migrate --noinput
+```
 
 ### 2. Arquivos Estáticos
 ```bash
-# Se necessário, execute no Railway Shell:
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --clear
 ```
 
 ### 3. Criar Superusuário
 ```bash
-# No Railway Shell:
 python manage.py createsuperuser
 ```
 
+### 4. Healthcheck
+- Endpoint público: https://SEU_SUBDOMINIO.up.railway.app/healthz/
+- Configurado em `.railway.json`
+
 ## 🎯 URLs do Sistema
 
-- **App**: `https://seu-projeto.up.railway.app/`
-- **Admin**: `https://seu-projeto.up.railway.app/admin/`
-- **Dashboard**: `https://seu-projeto.up.railway.app/dashboard/`
+- App: https://SEU_SUBDOMINIO.up.railway.app/
+- Admin: https://SEU_SUBDOMINIO.up.railway.app/admin/
+- Dashboard: https://SEU_SUBDOMINIO.up.railway.app/dashboard/
 
 ## ⚙️ Configurações de Segurança
 
-O sistema está configurado para produção com:
-
-- ✅ HTTPS obrigatório
-- ✅ Cookies seguros
-- ✅ Proteção XSS
-- ✅ Proteção CSRF
-- ✅ Headers de segurança
-- ✅ WhiteNoise para arquivos estáticos
+- Proxy SSL: SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO','https')
+- Headers: XSS e content type nosniff ativados
+- CSRF_TRUSTED_ORIGINS configurável via variável de ambiente
+- WhiteNoise para estáticos com Manifest e compressão
 
 ## 🐛 Troubleshooting
 
-### Erro de ALLOWED_HOSTS
-```python
-# Adicione o domínio do Railway em ALLOWED_HOSTS
-ALLOWED_HOSTS=*.railway.app,*.up.railway.app,seu-dominio.railway.app
-```
+### 403 CSRF no login
+- Confirme CSRF_TRUSTED_ORIGINS com o domínio exato (https://...)
+- Confirme que o template tem `{% csrf_token %}` (login.html já tem)
+- Limpe sessões antigas: `python manage.py clearsessions`
+- Verifique se DEBUG=false em produção
+
+### DisallowedHost
+- Inclua o host exato do Railway em ALLOWED_HOSTS (sem espaços)
 
 ### Erro de Static Files
 ```bash
-# Execute no Railway Shell:
 python manage.py collectstatic --noinput --clear
 ```
 
 ### Erro de Database
-Verifique se o PostgreSQL foi adicionado e a variável `DATABASE_URL` existe.
+- Verifique se o PostgreSQL foi adicionado e a variável DATABASE_URL existe.
 
 ## 📊 Monitoramento
 
-O sistema inclui configurações para:
-- Logs automáticos via `gunicorn`
-- Compressão de arquivos estáticos
-- Cache otimizado para produção
+- Logs via gunicorn (Procfile)
+- Compressão de estáticos via WhiteNoise
 
 ## 🔄 Atualizações
 
-Para atualizações futuras:
-1. Faça push para o repositório GitHub
-2. O Railway fará redeploy automático
-3. Migrações serão executadas automaticamente
+1. Push para o GitHub
+2. Railway faz redeploy
+3. Rode migrate/collectstatic no Shell se necessário
 
 ---
 
-**✅ Sistema pronto para produção no Railway!**
+✅ Sistema pronto para produção no Railway

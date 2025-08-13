@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'apps.core',
-    'apps.users',
+    'apps.users.apps.UsersConfig',
     'apps.patients',
     'apps.assessments',
     'evaluators',
@@ -173,7 +173,7 @@ REST_FRAMEWORK = {
 
 # Configurações de autenticação
 LOGIN_URL = '/evaluators/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/evaluators/login/'
 
 # Configurações de segurança para produção
@@ -181,12 +181,23 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
+    # Confiar no proxy do Railway para detectar HTTPS corretamente
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     # Configurações de HTTPS mais flexíveis para Railway
     SECURE_SSL_REDIRECT = False  # Railway gerencia HTTPS
     SESSION_COOKIE_SECURE = False  # Permitir HTTP para Railway
     CSRF_COOKIE_SECURE = False  # Permitir HTTP para Railway
-    CSRF_TRUSTED_ORIGINS = [
-        'https://*.railway.app',
-        'https://*.up.railway.app',
-        'https://web-production-e669a.up.railway.app'
-    ]
+    # SAMESITE para cookies em produção
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+
+    # Permitir configurar origens confiáveis de CSRF via variável de ambiente
+    _csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
+    if _csrf_trusted_origins_env:
+        CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_origins_env.split(',') if o.strip()]
+    else:
+        CSRF_TRUSTED_ORIGINS = [
+            'https://*.railway.app',
+            'https://*.up.railway.app',
+            # 'https://seu-dominio.up.railway.app'  # defina via variável de ambiente em produção
+        ]
