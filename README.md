@@ -1,4 +1,4 @@
-# 🧠 CareSense
+# 🧠 AvivaMente
 
 <div align="center">
 
@@ -16,7 +16,7 @@
 
 ---
 
-O **CareSense** é uma plataforma digital completa para avaliações neuropsicológicas em ambiente clínico, otimizada para tablets e desenvolvida com foco na precisão diagnóstica. O sistema oferece uma bateria validada de testes cognitivos com dados normativos específicos para a população brasileira, permitindo análises estatísticas avançadas e relatórios clínicos automatizados.
+O **AvivaMente** é uma plataforma digital completa para avaliações neuropsicológicas em ambiente clínico, otimizada para tablets e desenvolvida com foco na precisão diagnóstica. O sistema oferece uma bateria validada de testes cognitivos com dados normativos específicos para a população brasileira, permitindo análises estatísticas avançadas e relatórios clínicos automatizados.
 
 O sistema é projetado especificamente para atender às necessidades de:
 
@@ -45,7 +45,7 @@ O sistema é projetado especificamente para atender às necessidades de:
 
 ## Visão do Produto
 
-#### O CareSense foi desenvolvido para digitalizar e modernizar os processos de avaliação neuropsicológica, oferecendo uma solução completa que combina precisão científica com praticidade clínica. Com interface otimizada para tablets e dados normativos validados para a população brasileira, o sistema reduz em até 60% o tempo de aplicação e scoring dos testes, mantendo a rigor científico necessário para diagnósticos precisos.
+#### O AvivaMente foi desenvolvido para digitalizar e modernizar os processos de avaliação neuropsicológica, oferecendo uma solução completa que combina precisão científica com praticidade clínica. Com interface otimizada para tablets e dados normativos validados para a população brasileira, o sistema reduz em até 60% o tempo de aplicação e scoring dos testes, mantendo a rigor científico necessário para diagnósticos precisos.
 
 ---
 
