@@ -2,6 +2,13 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import date
 
+class EducationLevel(models.TextChoices):
+    NONE = 'NONE', 'Sem escolaridade'
+    FUNDAMENTAL = 'FUNDAMENTAL', 'Fundamental'
+    MEDIO = 'MEDIO', 'Ensino Médio'
+    GRADUACAO = 'GRADUACAO', 'Graduação'
+    POSGRAD = 'POSGRAD', 'Pós-graduação'
+
 class Patient(models.Model):
     full_name = models.CharField(
         max_length=200,
@@ -11,11 +18,23 @@ class Patient(models.Model):
     birth_date = models.DateField(
         verbose_name='Data de Nascimento'
     )
-    
-    education_level = models.IntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(25)],
-        verbose_name='Anos de Estudo',
-        help_text='Número de anos de educação formal'
+
+    # Novo: Escolaridade por nível (choices)
+    education_level = models.CharField(
+        max_length=20,
+        choices=EducationLevel.choices,
+        default=EducationLevel.FUNDAMENTAL,
+        verbose_name='Escolaridade',
+        help_text='Nível de escolaridade (ex.: Fundamental, Médio, Graduação)'
+    )
+
+    # Opcional/Legado: anos de estudo (mantido para referência e migração de dados)
+    education_years = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(30)],
+        verbose_name='Anos de Estudo (legado)',
+        help_text='Campo legado, opcional. Não é mais utilizado para cálculos.'
     )
     
     room_number = models.CharField(
@@ -39,37 +58,8 @@ class Patient(models.Model):
         """Calcula a idade do paciente"""
         today = date.today()
         return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
-    
+
     @property
     def education_grade(self):
-        """Converte anos de estudo em grau de escolaridade"""
-        years = self.education_level
-        
-        if years == 0:
-            return "Sem escolaridade"
-        elif years <= 4:
-            return f"Fundamental I ({years}° ano)"
-        elif years <= 8:
-            return f"Fundamental II ({years}° ano)"
-        elif years == 9:
-            return "Fundamental completo"
-        elif years <= 11:
-            return f"Ensino Médio ({years - 9}° ano)"
-        elif years == 12:
-            return "Ensino Médio completo"
-        elif years <= 16:
-            return f"Superior ({years - 12}° ano)"
-        elif years >= 17:
-            return "Superior completo/Pós-graduação"
-        else:
-            return f"{years} anos de estudo"
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.full_name} - Quarto {self.room_number}"
-    
-    @property
-    def age(self):
-        """Calcula a idade do paciente em anos"""
-        today = date.today()
-        return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
+        """Retorna o rótulo amigável da escolaridade"""
+        return self.get_education_level_display()

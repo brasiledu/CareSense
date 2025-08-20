@@ -10,7 +10,7 @@ class PatientAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Informações do Paciente', {
-            'fields': ('full_name', 'birth_date', 'age', 'education_level', 'room_number')
+            'fields': ('full_name', 'birth_date', 'age', 'education_level', 'education_years', 'room_number')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
