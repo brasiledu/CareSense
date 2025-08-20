@@ -12,35 +12,20 @@ from .serializers import UserSerializer
 
 @csrf_protect
 def login_view(request):
-    """View para login de usuários"""
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-    
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
-            login(request, user)
-            messages.success(request, f'Bem-vindo, {user.get_full_name()}!')
-            
-            # Redirecionar para a página solicitada ou dashboard
-            next_url = request.GET.get('next', 'dashboard')
-            return redirect(next_url)
-        else:
-            messages.error(request, 'Nome de usuário ou senha incorretos.')
-    
-    return render(request, 'users/login.html')
+    """Encaminha para o login de avaliadores, preservando ?next= quando presente."""
+    next_url = request.GET.get('next') or request.POST.get('next')
+    evaluator_login_url = reverse('evaluators:login')
+    if next_url:
+        return redirect(f"{evaluator_login_url}?next={next_url}")
+    return redirect(evaluator_login_url)
 
 @login_required
 def logout_view(request):
-    """View para logout de usuários"""
+    """Logout e redireciona para o login de avaliadores."""
     user_name = request.user.get_full_name()
     logout(request)
     messages.success(request, f'Até logo, {user_name}!')
-    return redirect('login')
+    return redirect('evaluators:login')
 
 @login_required
 def profile_view(request):

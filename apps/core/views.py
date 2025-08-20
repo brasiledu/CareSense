@@ -21,7 +21,7 @@ def home(request):
     else:
         return redirect('evaluators:login')
 
-# Healthcheck simples para o Railway
+# Healthcheck simples
 def healthz(request):
     return JsonResponse({"status": "ok"})
 
