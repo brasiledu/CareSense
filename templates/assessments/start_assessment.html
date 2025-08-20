@@ -221,7 +221,7 @@
         
         <div class="patient-info">
             <div><i class="fas fa-birthday-cake"></i> {{ patient.age }} anos</div>
-            <div><i class="fas fa-graduation-cap"></i> {{ patient.education_level }} anos de estudo</div>
+            <div><i class="fas fa-graduation-cap"></i> {{ patient.education_grade }}{% if patient.education_years %} ({{ patient.education_years }} anos){% endif %}</div>
             <div><i class="fas fa-bed"></i> Quarto {{ patient.room_number }}</div>
         </div>
         

@@ -303,7 +303,7 @@
                 <h3><i class="fas fa-user"></i> Informações do Paciente</h3>
                 <p><strong>Nome:</strong> <a href="/patients/{{ assessment.patient.id }}/">{{ assessment.patient.full_name }}</a></p>
                 <p><strong>Idade:</strong> {{ assessment.patient.age }} anos</p>
-                <p><strong>Escolaridade:</strong> {{ assessment.patient.education_level }} anos</p>
+                <p><strong>Escolaridade:</strong> {{ assessment.patient.education_grade }}{% if assessment.patient.education_years %} ({{ assessment.patient.education_years }} anos){% endif %}</p>
                 <p><strong>Quarto:</strong> {{ assessment.patient.room_number }}</p>
             </div>
             

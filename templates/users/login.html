@@ -1,299 +1,40 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - AvivaMente</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+{% extends 'base.html' %}
+{% block title %}Login - AvivaMente{% endblock %}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            background: white;
-            padding: 3rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            animation: slideUp 0.8s ease-out;
-            border: 1px solid #e9ecef;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .logo {
-            margin-bottom: 2rem;
-        }
-
-        .logo i {
-            font-size: 4rem;
-            color: #007bff;
-            margin-bottom: 1rem;
-        }
-
-        .logo h1 {
-            color: #2c3e50;
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .logo p {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            color: #2c3e50;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 1rem 1rem 1rem 3rem;
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #007bff;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-        }
-
-        .form-group i {
-            position: absolute;
-            left: 1rem;
-            top: 2.2rem;
-            color: #6c757d;
-            font-size: 1rem;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 1rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn i {
-            margin-right: 0.5rem;
-        }
-
-        .messages {
-            margin-bottom: 1.5rem;
-        }
-
-        .alert {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            border-left: 4px solid;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border-left-color: #28a745;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border-left-color: #dc3545;
-        }
-
-        .help-text {
-            text-align: center;
-            color: #6c757d;
-            font-size: 0.8rem;
-            margin-top: 1rem;
-        }
-
-        .forgot-password {
-            color: #007bff;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s ease;
-        }
-
-        .forgot-password:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .login-container {
-                padding: 2rem 1.5rem;
-                margin: 1rem;
-            }
-            
-            .logo h1 {
-                font-size: 1.8rem;
-            }
-            
-            .logo i {
-                font-size: 3rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 1.5rem 1rem;
-            }
-            
-            .logo h1 {
-                font-size: 1.5rem;
-            }
-            
-            .logo i {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <div class="logo">
-            <i class="fas fa-brain"></i>
-            <h1>AvivaMente</h1>
-            <p>Sistema de Avaliação Neuropsicológica</p>
+{% block content %}
+<div class="auth-wrapper" style="max-width: 480px; margin: 3rem auto;">
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <i class="fas fa-brain" style="font-size: 3rem; color: #3498db;"></i>
+            <h2 style="margin-top: 0.5rem; color: #2c3e50;">AvivaMente</h2>
+            <p style="color: #6c757d;">Acesse sua conta</p>
         </div>
 
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">
-                        <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        <form method="post">
+        <form method="post" novalidate>
             {% csrf_token %}
             {% if request.GET.next %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
             {% endif %}
-            
+
             <div class="form-group">
-                <label for="username">Usuário:</label>
-                <input type="text" id="username" name="username" required autofocus>
-                <i class="fas fa-user"></i>
+                <label for="id_username">Usuário</label>
+                <input type="text" id="id_username" name="username" class="form-control" required autofocus>
             </div>
 
             <div class="form-group">
-                <label for="password">Senha:</label>
-                <input type="password" id="password" name="password" required>
-                <i class="fas fa-lock"></i>
+                <label for="id_password">Senha</label>
+                <input type="password" id="id_password" name="password" class="form-control" required>
             </div>
 
-            <button type="submit" class="btn">
+            <button type="submit" class="btn" style="width: 100%;">
                 <i class="fas fa-sign-in-alt"></i>
                 Entrar
             </button>
+
+            <div style="text-align: center; margin-top: 0.75rem;">
+                <a href="#" class="forgot-password">Esqueceu sua senha?</a>
+            </div>
         </form>
-
-        <div class="help-text">
-            <p>Entre com suas credenciais de avaliador</p>
-            <p><a href="#" class="forgot-password">Esqueceu sua senha?</a></p>
-        </div>
     </div>
-
-    <script>
-        // Animação de foco nos inputs
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.style.transform = 'scale(1.02)';
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.style.transform = 'scale(1)';
-            });
-        });
-
-        // Efeito no botão de submit
-        document.querySelector('.btn').addEventListener('click', function(e) {
-            // Validação simples
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            if (!username || !password) {
-                e.preventDefault();
-                alert('Por favor, preencha todos os campos.');
-                return;
-            }
-            
-            // Efeito visual de carregamento
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
-            this.disabled = true;
-        });
-
-        // Auto-focus no primeiro campo
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('username').focus();
-        });
-    </script>
-</body>
-</html>
+</div>
+{% endblock %}
