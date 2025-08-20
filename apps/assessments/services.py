@@ -105,9 +105,22 @@ class AssessmentScoreCalculator:
         else:
             return "80+"
     
-    def _get_education_group(self, education_years):
-        """Determina o grupo educacional baseado nos anos de estudo"""
-        return "high_education" if education_years > 7 else "low_education"
+    def _get_education_group(self, patient):
+        """Determina o grupo educacional baseado no nível de escolaridade"""
+        # Prioriza nível; se não houver, usa anos legado
+        level = getattr(patient, 'education_level', None)
+        years = getattr(patient, 'education_years', None)
+        
+        if level in ('NONE', 'FUNDAMENTAL', 'MEDIO'):
+            return 'low_education'
+        if level in ('GRADUACAO', 'POSGRAD'):
+            return 'high_education'
+        
+        if years is not None:
+            return 'high_education' if years > 7 else 'low_education'
+        
+        # Default conservador
+        return 'low_education'
     
     def calculate_z_score(self, raw_score, mean, standard_deviation):
         """
@@ -124,7 +137,7 @@ class AssessmentScoreCalculator:
         Calcula os Z-Scores para TMT-A e TMT-B
         """
         age_group = self._get_age_group(patient.age)
-        education_group = self._get_education_group(patient.education_level)
+        education_group = self._get_education_group(patient)
         
         # Dados normativos para TMT-A
         tmt_a_norms = self.normative_data["tmt_a"][age_group][education_group]
@@ -141,7 +154,7 @@ class AssessmentScoreCalculator:
         Calcula o Z-Score para Digit Span (soma de forward + backward)
         """
         age_group = self._get_age_group(patient.age)
-        education_group = self._get_education_group(patient.education_level)
+        education_group = self._get_education_group(patient)
         
         norms = self.normative_data["digit_span"][age_group][education_group]
         return self.calculate_z_score(total_score, norms["mean"], norms["sd"])
@@ -151,7 +164,7 @@ class AssessmentScoreCalculator:
         Calcula o Z-Score para Stroop (tempo de interferência)
         """
         age_group = self._get_age_group(patient.age)
-        education_group = self._get_education_group(patient.education_level)
+        education_group = self._get_education_group(patient)
         
         norms = self.normative_data["stroop"][age_group][education_group]
         return self.calculate_z_score(interference_time, norms["mean"], norms["sd"])

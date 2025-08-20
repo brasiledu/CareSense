@@ -50,7 +50,11 @@ class AssessmentDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalhes completos do assessment"""
     patient_name = serializers.CharField(source='patient.full_name', read_only=True)
     patient_age = serializers.IntegerField(source='patient.age', read_only=True)
-    patient_education = serializers.IntegerField(source='patient.education_level', read_only=True)
+    # Compat: patient_education agora retorna o rótulo do nível
+    patient_education = serializers.CharField(source='patient.get_education_level_display', read_only=True)
+    # Campos adicionais explícitos
+    patient_education_level = serializers.CharField(source='patient.education_level', read_only=True)
+    patient_education_years = serializers.IntegerField(source='patient.education_years', read_only=True)
     assessor_name = serializers.CharField(source='assessor.get_full_name', read_only=True)
     digit_span_result = DigitSpanResultSerializer(read_only=True)
     tmt_result = TMTResultSerializer(read_only=True)
@@ -60,6 +64,7 @@ class AssessmentDetailSerializer(serializers.ModelSerializer):
         model = Assessment
         fields = [
             'id', 'patient', 'patient_name', 'patient_age', 'patient_education',
+            'patient_education_level', 'patient_education_years',
             'assessor', 'assessor_name', 'status', 'final_risk_score',
             'created_at', 'completed_at', 'digit_span_result', 'tmt_result', 'stroop_result'
         ]
