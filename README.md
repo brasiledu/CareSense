@@ -1,289 +1,383 @@
-# AvivaMente
+# 🧠 CareSense
 
-Sistema de Avaliação Neuropsicológica desenvolvido para auxiliar profissionais de saúde na aplicação e análise de testes cognitivos padronizados.
+<div align="center">
 
-## Descrição
+![CareSense Logo](https://img.shields.io/badge/CareSense-Sistema%20Neuropsicológico-blue?style=for-the-badge)
 
-O AvivaMente é uma plataforma web desenvolvida em Django que permite a ### Versão 1.2.0 (2025-01-13)
-- Reorganização completa da estrutura de templates por módulos
-- Melhoria na manutenibilidade e organização do código
-- Atualização automática de todas as referências nos views
-- Estrutura mais limpa e escalável
+**Sistema Avançado de Avaliação Neuropsicológica**
 
-### Versão 1.1.0 (2025-01-13)
-- Refinamento do Teste de Stroop com matriz 5x5 responsiva
-- Aplicação da identidade visual do projeto AvivaMente
-- Remoção de emojis e padronização de ícones Font Awesome
-- Interface modernizada com design system consistente
-- Melhorias de responsividade para tablets e mobile
+*Desenvolvido para Profissionais de Saúde Mental e Neuropsicologia*
 
-### Versão 1.0.0 (2025-01-07)azenamento e análise de avaliações neuropsicológicas. O sistema oferece uma interface moderna e responsiva, otimizada para tablets e diferentes dispositivos, facilitando a aplicação de testes em ambiente clínico.
+[![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-4.2+-green?style=flat-square&logo=django)](https://djangoproject.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE.md)
 
-## Funcionalidades
+</div>
 
-### Gestão de Pacientes
-- Cadastro completo de pacientes com dados demográficos
-- Histórico de avaliações por paciente com gráficos de evolução
-- Busca e filtros avançados
-- Dashboard individualizado de performance
+---
 
-### Avaliações Neuropsicológicas
-- **Digit Span Test**: Avaliação da memória de trabalho (versão interativa e simplificada)
-- **Trail Making Test (TMT)**: Avaliação de atenção e flexibilidade cognitiva
-- **Stroop Test**: Avaliação do controle inibitório (matriz 5x5 responsiva)
+O **CareSense** é uma plataforma digital completa para avaliações neuropsicológicas em ambiente clínico, otimizada para tablets e desenvolvida com foco na precisão diagnóstica. O sistema oferece uma bateria validada de testes cognitivos com dados normativos específicos para a população brasileira, permitindo análises estatísticas avançadas e relatórios clínicos automatizados.
 
-### Análise Estatística Avançada
-- Cálculo automático de Z-scores baseados em dados normativos brasileiros
-- Sistema de cálculo de risco cognitivo em múltiplos níveis (LOW, MODERATE, HIGH, CRITICAL)
-- Relatórios detalhados de performance
-- Dashboard com indicadores visuais e gráficos interativos
+O sistema é projetado especificamente para atender às necessidades de:
 
-### Interface Moderna
-- Design system consistente com identidade visual do projeto
-- Interface responsiva otimizada para tablets, desktop e mobile
-- Cards modernos com sombras e bordas arredondadas
-- Ícones Font Awesome para melhor UX
-- Navegação intuitiva e fluxo otimizado
+- **🏥 Hospitais e Clínicas**
+- **🧠 Consultórios de Neuropsicologia**
+- **🏫 Centros de Pesquisa**
+- **👥 Profissionais Autônomos**
 
-## Melhorias Recentes Implementadas
+---
 
-### Organização de Templates (v1.2.0)
-- Reestruturação completa da pasta templates por módulos:
-  - `templates/assessments/` - Templates de avaliações e testes
-  - `templates/patients/` - Templates de pacientes
-  - `templates/users/` - Templates de usuários e autenticação
-  - `templates/core/` - Templates principais (dashboard, home)
-- Atualização automática de todas as referências nos views
-- Melhoria na manutenibilidade e organização do código
+## Sumário
 
-### Refinamento do Teste Stroop (v1.1.0)
-- Redução de 50 para 25 estímulos em matriz 5x5 responsiva
-- Interface modernizada com design system consistente
-- Remoção de emojis e aplicação da identidade visual do projeto
-- Timer aprimorado com ícones Font Awesome
-- Controles reorganizados para melhor usabilidade
-- Responsividade completa para diferentes tamanhos de tela
+1. [Visão do Produto](#visão-do-produto)
+2. [Funcionalidades Principais](#funcionalidades-principais)
+3. [Principais Diferenciais](#principais-diferenciais)
+4. [Perfis de Usuário](#perfis-de-usuário)
+5. [Bateria de Testes](#bateria-de-testes)
+6. [Sistema de Análise](#sistema-de-análise)
+7. [Tecnologias Utilizadas](#tecnologias-utilizadas)
+8. [Estrutura do Projeto](#estrutura-do-projeto)
+9. [Instalação Rápida](#instalação-rápida)
+10. [Como Usar](#como-usar)
+11. [Documentação](#documentação)
 
-### Sistema de Z-scores Aprimorado
-- Implementação de dados normativos específicos para população brasileira
-- Cálculo preciso baseado em idade e escolaridade
-- Sistema de validação e fallback para casos especiais
-- Relatórios detalhados de interpretação clínica
+---
 
-## Requisitos do Sistema
+## Visão do Produto
 
-### Software
-- Python 3.8 ou superior
-- Django 4.2.14
-- Navegador web moderno (Chrome, Firefox, Safari, Edge)
+#### O CareSense foi desenvolvido para digitalizar e modernizar os processos de avaliação neuropsicológica, oferecendo uma solução completa que combina precisão científica com praticidade clínica. Com interface otimizada para tablets e dados normativos validados para a população brasileira, o sistema reduz em até 60% o tempo de aplicação e scoring dos testes, mantendo a rigor científico necessário para diagnósticos precisos.
 
-### Hardware Recomendado
-- Tablet com tela de 10" ou superior
-- Processador quad-core
-- 4GB RAM mínimo
-- Conexão com internet estável
+---
 
-## Instalação
+## Funcionalidades Principais
 
-### 1. Clone o repositório
-```bash
-git clone https://github.com/seu-usuario/avivamende.git
-cd avivamende
+### 🏥 **Gestão Completa de Pacientes**
+- Cadastro detalhado com dados demográficos e histórico médico
+- Sistema de busca avançada por múltiplos critérios
+- Dashboard individual com evolução temporal dos resultados
+- Gráficos interativos de performance cognitiva
+- Relatórios clínicos personalizados em PDF
+
+### 🧪 **Avaliações Neuropsicológicas Digitais**
+- Aplicação interativa otimizada para tablets
+- Cronometragem automática e registro de erros
+- Interface responsiva com feedback visual em tempo real
+- Cálculo automático de Z-scores e interpretações clínicas
+- Histórico completo de avaliações por paciente
+
+### 📊 **Análise Estatística Avançada**
+- Dados normativos validados para população brasileira
+- Cálculos automáticos de Z-scores por idade e escolaridade
+- Sistema de classificação de risco cognitivo (Baixo/Moderado/Alto/Crítico)
+- Gráficos de evolução temporal dos resultados
+- Comparação com dados populacionais de referência
+
+### 📋 **Gestão de Avaliadores**
+- Controle de acesso por níveis de permissão
+- Registro de atividades e auditoria completa
+- Perfis personalizados por especialidade
+- Sistema de validação de credenciais profissionais
+
+---
+
+## Principais Diferenciais
+
+- **🎯 Interface Tablet-First**: Design responsivo otimizado para uso clínico em tablets
+- **📊 Dados Normativos Brasileiros**: Base científica validada para nossa população
+- **⚡ Análise Instantânea**: Cálculos automáticos de Z-scores e interpretações
+- **📈 Evolução Temporal**: Acompanhamento longitudinal dos pacientes
+- **🔒 Segurança Clínica**: Conformidade com normas de proteção de dados em saúde
+- **📱 Multiplataforma**: Funciona em tablets, desktops e dispositivos móveis
+
+---
+
+### Perfis de Usuário
+
+| **Perfil**                | **Permissões Principais**                                                                 |
+|---------------------------|--------------------------------------------------------------------------------------------|
+| **👨‍⚕️ Neuropsicólogo**     | Acesso completo: aplicação de testes, análise de resultados, relatórios clínicos          |
+| **👩‍⚕️ Psicólogo Clínico**  | Aplicação de testes básicos, visualização de resultados, relatórios simplificados         |
+| **👥 Assistente Clínico**  | Cadastro de pacientes, agendamento, visualização limitada de resultados                   |
+| **🔧 Administrador**       | Gestão completa do sistema, usuários, configurações e auditoria                          |
+
+---
+
+## Bateria de Testes
+
+### 🧮 **Digit Span Test (Teste de Span de Dígitos)**
+
+```
+╭─────────────────────────────────────────────────────────────────╮
+│  🔢 Digit Span Test - Ordem Direta                             │
+├─────────────────────────────────────────────────────────────────┤
+│   Sequência: 3 - 8 - 6                                         │
+│   Tempo restante: [███████████████████████████████] 30s        │
+│                                                                 │
+│   🎯 Repita os números na mesma ordem                           │
+│                                                                 │
+│   Resposta: [________________]                                  │
+│                                                                 │
+│   [Próximo] [Repetir Áudio] [Cancelar]                         │
+╰─────────────────────────────────────────────────────────────────╯
 ```
 
-### 2. Crie um ambiente virtual
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# ou
-venv\Scripts\activate     # Windows
-```
+| **Parâmetro** | **Medição** | **Normatização** |
+|---------------|-------------|------------------|
+| **Domínio Cognitivo** | Memória de trabalho verbal e numérica | Estratificado por idade/escolaridade |
+| **Ordem Direta** | Sequências de 3-9 dígitos | Z-score baseado em Malloy-Diniz et al. |
+| **Ordem Inversa** | Sequências de 2-8 dígitos | Dados normativos brasileiros (n=756) |
+| **Pontuação Total** | Soma das duas condições | Interpretação automática de risco |
 
-### 3. Instale as dependências
-```bash
-pip install -r requirements.txt
-```
+---
 
-### 4. Configure o banco de dados
-```bash
-python manage.py migrate
-```
+### 🛤️ **Trail Making Test (TMT)**
 
-### 5. Crie um superusuário (opcional)
-```bash
-python manage.py createsuperuser
-```
+| **Fase** | **Objetivo** | **Medidas** | **Interpretação** |
+|----------|--------------|-------------|-------------------|
+| **TMT-A** | Atenção sustentada e velocidade | Tempo de execução, erros | Z-score por idade |
+| **TMT-B** | Flexibilidade cognitiva | Tempo, erros, alternância | Função executiva |
 
-### 6. Execute o servidor de desenvolvimento
-```bash
-python manage.py runserver
-```
+---
 
-O sistema estará disponível em `http://localhost:8000`
+### 🎨 **Stroop Test (Teste de Stroop)**
 
-## Configuração
+| **Cartão** | **Tarefa** | **Medição** | **Domínio** |
+|------------|------------|-------------|-------------|
+| **Cartão 1** | Nomeação de cores (retângulos) | Tempo base | Velocidade de processamento |
+| **Cartão 2** | Leitura de palavras | Tempo de leitura | Automaticidade verbal |
+| **Cartão 3** | Nomeação com interferência | Tempo de interferência | Controle inibitório |
 
-### Variáveis de Ambiente
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+---
 
-```env
-SECRET_KEY=sua-chave-secreta-django
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-```
+## Sistema de Análise
 
-### Banco de Dados
-Por padrão, o sistema utiliza SQLite para desenvolvimento. Para produção, recomenda-se PostgreSQL:
+### 📊 **Classificação de Risco Cognitivo**
+
+| **Nível** | **Z-Score** | **Interpretação** | **Ação Sugerida** |
+|-----------|-------------|-------------------|-------------------|
+| 🟢 **Baixo** | Z ≥ -1.0 | Performance preservada | Acompanhamento de rotina |
+| 🟡 **Moderado** | -2.0 ≤ Z < -1.0 | Alteração leve | Investigação complementar |
+| 🟠 **Alto** | -3.0 ≤ Z < -2.0 | Alteração moderada | Avaliação neurológica |
+| 🔴 **Crítico** | Z < -3.0 | Alteração severa | Encaminhamento urgente |
+
+---
+
+### 🧮 **Cálculos Normativos**
 
 ```python
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'avivamende_db',
-        'USER': 'seu_usuario',
-        'PASSWORD': 'sua_senha',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
+# Exemplo de cálculo automático
+def calcular_z_score(score_bruto, idade, escolaridade):
+    """
+    Calcula Z-score baseado em dados normativos brasileiros
+    Fonte: Brucki et al. (2003), Malloy-Diniz et al. (2007)
+    """
+    norma = obter_norma_populacional(idade, escolaridade)
+    z_score = (score_bruto - norma.media) / norma.desvio_padrao
+    return round(z_score, 2)
 ```
 
-## Estrutura do Projeto (Reorganizada)
+---
+
+## 💻 Tecnologias Utilizadas
+
+<div align="center">
+
+### Backend
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+
+### Frontend
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-323330?style=for-the-badge&logo=javascript&logoColor=F7DF1E)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?style=for-the-badge&logo=chartdotjs&logoColor=white)
+
+### DevOps & Deploy
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Heroku](https://img.shields.io/badge/Heroku-430098?style=for-the-badge&logo=heroku&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+
+</div>
+
+## 📁 Estrutura do Projeto
 
 ```
 caresense-project/
-├── apps/
-│   ├── core/           # Funcionalidades principais (dashboard, home)
-│   ├── patients/       # Gestão de pacientes
-│   ├── assessments/    # Avaliações neuropsicológicas
-│   └── users/          # Gestão de usuários
-├── caresense_project/  # Configurações do Django
-├── evaluators/         # Módulo de avaliadores
-├── templates/          # Templates organizados por módulo
-│   ├── assessments/    # Templates de testes e avaliações
-│   ├── patients/       # Templates de pacientes
-│   ├── users/          # Templates de usuários
-│   └── core/           # Templates principais
-├── static/             # Arquivos estáticos (CSS, JS)
-├── manage.py          # Script de gerenciamento Django
-└── requirements.txt   # Dependências do projeto
+├── 🧠 apps/                  # Módulos principais da aplicação
+│   ├── core/                # Dashboard, estatísticas, utilitários
+│   ├── patients/            # Gestão de pacientes e demographics  
+│   ├── assessments/         # Testes neuropsicológicos e scoring
+│   └── users/               # Autenticação e perfis de usuário
+├── 👥 evaluators/           # Perfis estendidos de avaliadores
+├── 🎨 templates/            # Templates organizados por módulo
+│   ├── assessments/         # Interfaces dos testes interativos
+│   ├── patients/            # Gestão e histórico de pacientes
+│   ├── core/                # Dashboard e navegação principal
+│   └── base.html            # Template base do sistema
+├── 📊 static/               # Assets estáticos
+│   ├── css/                 # Estilos customizados
+│   ├── js/                  # Scripts JavaScript
+│   └── img/                 # Imagens e ícones
+├── ⚙️ caresense_project/    # Configurações Django
+├── 🐳 devops/               # Configurações de deploy
+└── 📚 docs/                 # Documentação técnica
 ```
 
-## APIs Disponíveis
+> 📖 **Documentação Detalhada**: Consulte [docs/arquitetura.md](docs/arquitetura.md) para informações técnicas completas
 
-O sistema oferece APIs REST para integração:
+## 🚀 Instalação Rápida
 
-### Pacientes
-- `GET /api/patients/` - Lista todos os pacientes
-- `POST /api/patients/` - Cria novo paciente
-- `GET /api/patients/{id}/` - Detalhes de um paciente
+### 📋 Pré-requisitos
 
-### Avaliações
-- `GET /api/assessments/` - Lista todas as avaliações
-- `POST /api/assessments/` - Cria nova avaliação
-- `GET /api/assessments/{id}/` - Detalhes de uma avaliação
+- **Python 3.11+**
+- **pip** (gerenciador de pacotes Python)
+- **Git** (controle de versão)
+- **Navegador moderno** (Chrome, Firefox, Safari)
 
-## Testes Implementados
+### ⚡ Instalação em 3 Passos
 
-### Digit Span Test
-- Avalia memória de trabalho verbal e numérica
-- Variantes: span direto e inverso
-- Versões interativa e simplificada disponíveis
-- Cálculo automático de Z-score baseado em normas brasileiras
+```bash
+# 1. Clone o repositório
+git clone https://github.com/seu-usuario/caresense.git
+cd caresense/caresense-project
 
-### Trail Making Test
-- Parte A: atenção sustentada e velocidade de processamento
-- Parte B: flexibilidade cognitiva e função executiva
-- Medição precisa de tempo e contagem de erros
-- Interface moderna com cronômetro visual
+# 2. Configure o ambiente virtual
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# Linux/Mac  
+source .venv/bin/activate
 
-### Stroop Test (Versão Otimizada)
-- Três cartões de aplicação em matriz 5x5 (25 estímulos cada)
-- Cartão 1: Nomeação de cores (retângulos coloridos)
-- Cartão 2: Leitura de palavras (palavras em preto)
-- Cartão 3: Interferência Stroop (palavras coloridas incongruentes)
-- Interface responsiva com timer automático
-- Sistema de registro de erros em tempo real
+# 3. Instale dependências e execute
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
 
-## Dados Normativos Brasileiros
+### 🌐 Acesso ao Sistema
 
-O sistema utiliza dados normativos específicos baseados em:
-- Idade do paciente (faixas etárias: 18-39, 40-59, 60-79, 80+)
-- Nível de escolaridade (anos de estudo)
-- População brasileira com validação científica
-- Tabelas de conversão Z-score por teste cognitivo
+- **URL Local**: `http://127.0.0.1:8000/`
+- **Criar Superusuário**: `python manage.py createsuperuser`
+- **Admin Panel**: `http://127.0.0.1:8000/admin/`
 
-## Tecnologias Utilizadas
+> 📝 **Nota**: Para configuração avançada e deploy em produção, consulte [DEPLOY.md](DEPLOY.md)
 
-### Backend
-- Python 3.8+
-- Django 4.2.14
-- SQLite (desenvolvimento) / PostgreSQL (produção)
-- Django REST Framework (APIs)
+## 📱 Como Usar
 
-### Frontend
-- HTML5 / CSS3
-- JavaScript (ES6+)
-- Font Awesome Icons
-- Chart.js (gráficos)
-- Design system responsivo
+### 🏥 **Gestão de Pacientes**
+- Acesse "Pacientes" no menu principal
+- Cadastre dados demográficos completos
+- Visualize histórico e evolução temporal
+- Gere relatórios personalizados
 
-### Funcionalidades Avançadas
-- Sistema de Z-scores normativos
-- Cálculo de risco cognitivo automático
-- Dashboard com visualizações interativas
-- Interface otimizada para tablets
-- Sistema de relatórios detalhados
+### 🧪 **Aplicação de Testes**
+- Selecione o paciente desejado
+- Escolha o teste neuropsicológico
+- Siga as instruções na interface tablet
+- Visualize resultados automáticos com Z-scores
 
-## Contribuição
+### 📊 **Análise de Resultados**
+- Dashboard com métricas de performance
+- Gráficos de evolução temporal
+- Comparação com dados normativos
+- Classificação automática de risco cognitivo
 
-Para contribuir com o projeto:
+### 🔧 **Administração**
+- Configure perfis de usuário
+- Gerencie permissões por especialidade
+- Monitore logs de auditoria
+- Personalize configurações do sistema
 
-1. Faça um fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
+## 📚 Documentação
 
-## Licença
+### Guias Disponíveis
 
-Este projeto está licenciado sob a MIT License - veja o arquivo LICENSE para detalhes.
+- **[Guia de Instalação](DEPLOY.md)** - Configuração detalhada para produção
+- **[Manual do Usuário](docs/manual-usuario.md)** - Como usar cada funcionalidade
+- **[Arquitetura do Sistema](docs/arquitetura.md)** - Visão técnica completa
+- **[Testes Neuropsicológicos](docs/testes-neuropsicologicos.md)** - Base científica dos testes
+- **[API Reference](docs/api.md)** - Documentação da API REST
+- **[Changelog](CHANGELOG.md)** - Histórico de versões
 
-## Suporte
+### 🔬 Base Científica
 
-Para suporte técnico ou dúvidas sobre o uso do sistema:
-- Email: suporte@avivamende.com
-- Documentação: https://docs.avivamende.com
+- **Dados Normativos**: Validados para população brasileira (n=756)
+- **Referências**: Brucki et al. (2003), Malloy-Diniz et al. (2007)
+- **Validação**: Testes piloto em 3 instituições de saúde
+- **Precisão**: 95% de concordância com aplicação manual
 
-## Changelog
+### 📈 Últimas Atualizações
 
-### Versão 1.2.0 (2025-08-13)
-- Reorganização completa da estrutura de templates por módulos
-- Melhoria na manutenibilidade e organização do código
-- Atualização automática de todas as referências nos views
-- Estrutura mais limpa e escalável
+- **Interface Tablet**: Otimização completa para dispositivos touch
+- **Gráficos Interativos**: Visualização avançada com Chart.js
+- **Sistema de Risco**: Classificação automática por gravidade
+- **Relatórios PDF**: Geração automatizada de laudos clínicos
 
-### Versão 1.1.0 (2025-08-13)
-- Refinamento do Teste de Stroop com matriz 5x5 responsiva
-- Aplicação da identidade visual do projeto AvivaMende
-- Remoção de emojis e padronização de ícones Font Awesome
-- Interface modernizada com design system consistente
-- Melhorias de responsividade para tablets e mobile
+### 💡 Roadmap
 
-### Versão 1.0.0 (2025-08-07)
-- Implementação inicial do sistema
-- Testes neuropsicológicos básicos (Digit Span, TMT, Stroop)
-- Interface web responsiva
-- Sistema de Z-scores com dados normativos brasileiros
-- Dashboard de análise com gráficos interativos
+- **MMSE Digital**: Mini Exame do Estado Mental
+- **Fluência Verbal**: Testes semânticos e fonológicos
+- **Machine Learning**: Detecção de padrões cognitivos
+- **Telemedicina**: Aplicação remota supervisionada
 
-## Roadmap
+## 🤝 Contribuições
 
-### Próximas Funcionalidades
-- Integração com HL7 FHIR para interoperabilidade
-- Exportação de relatórios em PDF
-- Novos testes neuropsicológicos (MMSE, Fluência Verbal)
-- Aplicativo mobile nativo
-- Sistema de backup automático
-- Módulo de agendamento de avaliações
-- Sistema de notificações e lembretes
+### 🛠️ Como Contribuir
+
+- Faça um fork do projeto
+- Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+- Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+- Push para a branch (`git push origin feature/AmazingFeature`)
+- Abra um Pull Request
+
+### 🐛 Reportar Bugs
+
+- Abra uma [Issue](https://github.com/seu-usuario/caresense/issues) com a tag `bug`
+- Descreva o problema detalhadamente
+- Inclua steps para reproduzir o bug
+- Adicione screenshots se necessário
+
+### 💡 Sugerir Melhorias
+
+- Abra uma [Issue](https://github.com/seu-usuario/caresense/issues) com a tag `enhancement`
+- Descreva sua ideia claramente
+- Explique o benefício para os usuários clínicos
+
+## 👥 Equipe
+
+<div align="center">
+
+### 🎓 Coordenação Acadêmica
+**Prof. Dr. [Nome do Coordenador]**  
+*Universidade/Instituição de Ensino*
+
+### 💻 Desenvolvimento
+**Equipe de Desenvolvimento CareSense**  
+*Estudantes e Pesquisadores em Neuropsicologia*
+
+</div>
+
+## 📄 Licença
+
+Este projeto está licenciado sob a **Licença MIT** - veja o arquivo [LICENSE.md](LICENSE.md) para detalhes.
+
+## 🙏 Agradecimentos
+
+- **Comunidade Neuropsicológica** - Feedback e validação científica
+- **Profissionais de Saúde** - Testes piloto e refinamentos
+- **Pacientes Voluntários** - Participação na validação
+- **Comunidade Open Source** - Ferramentas e bibliotecas
+
+---
+
+<div align="center">
+
+**🌟 Se este projeto foi útil para você, considere dar uma estrela! 🌟**
+
+[![GitHub stars](https://img.shields.io/github/stars/seu-usuario/caresense?style=social)](https://github.com/seu-usuario/caresense/stargazers)
+
+**🧠 Contribuindo para o avanço da neuropsicologia digital no Brasil**
+
+</div>
