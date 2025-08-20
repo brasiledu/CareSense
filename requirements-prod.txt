@@ -1,5 +1,4 @@
-# AvivaMente - Production Requirements
-# Dependências otimizadas para produção no Railway
+# Dependências para produção
 # Para instalar: pip install -r requirements-prod.txt
 
 # Inclui requirements principais

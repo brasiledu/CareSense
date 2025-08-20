@@ -274,11 +274,3 @@ secrets.json
 *.pem
 *.key
 ssl_certificates/
-
-# Railway specific
-.railway/
-railway.json
-
-# Production environment
-.env.production
-.env.railway

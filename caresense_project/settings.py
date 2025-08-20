@@ -30,26 +30,12 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
 
-# Adicionar hosts específicos do Railway se não estiverem
-railway_hosts = [
-    '.railway.app',
-    '.up.railway.app', 
-    'web-production-e669a.up.railway.app'
-]
-
-for host in railway_hosts:
-    if host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(host)
-
 # CSRF Trusted Origins (sempre definido, usa env se existir)
 _csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
 if _csrf_trusted_origins_env:
     CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_trusted_origins_env.split(',') if o.strip()]
 else:
     CSRF_TRUSTED_ORIGINS = [
-        'https://*.railway.app',
-        'https://*.up.railway.app',
-        'https://web-production-e669a.up.railway.app',
         'http://localhost',
         'http://127.0.0.1',
         'http://0.0.0.0',
@@ -108,10 +94,10 @@ WSGI_APPLICATION = 'caresense_project.wsgi.application'
 
 # Configuração de database com fallback para SQLite em desenvolvimento
 DB_CONN_MAX_AGE = int(os.environ.get('DB_CONN_MAX_AGE', '60'))
-DATABASE_URL = os.environ.get('DATABASE_URL') or os.environ.get('DATABASE_PUBLIC_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL and DATABASE_URL != "postgresql://test:test@localhost:5432/test":
-    # Produção - PostgreSQL via Railway
+    # Produção - PostgreSQL (via variável DATABASE_URL)
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=DB_CONN_MAX_AGE)
     }
@@ -196,12 +182,12 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-    # Confiar no proxy do Railway para detectar HTTPS corretamente
+    # Confiar no proxy para detectar HTTPS corretamente (quando houver)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    # Configurações de HTTPS mais flexíveis para Railway
-    SECURE_SSL_REDIRECT = False  # Railway gerencia HTTPS
-    SESSION_COOKIE_SECURE = False  # Permitir HTTP para Railway
-    CSRF_COOKIE_SECURE = False  # Permitir HTTP para Railway
+    # Ajustes de HTTPS (ajuste via env conforme seu provedor)
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
     # SAMESITE para cookies em produção
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE = 'Lax'
