@@ -7,6 +7,7 @@ urlpatterns = [
     path('healthz/', core_views.healthz, name='healthz'),
     path('dashboard/', core_views.dashboard, name='dashboard'),
     path('patients/', core_views.patient_list, name='patient_list'),
+    path('patients/dashboard/', core_views.patients_dashboard, name='patients_dashboard'),
     path('patients/<int:patient_id>/', core_views.patient_detail, name='patient_detail'),
     path('patients/<int:patient_id>/history/', core_views.patient_history, name='patient_history'),
     path('assessments/', core_views.assessment_list, name='assessment_list'),
@@ -21,6 +22,7 @@ urlpatterns = [
     path('assessments/<int:assessment_id>/digit-span/', core_views.run_digit_span, name='run_digit_span'),
     path('assessments/<int:assessment_id>/tmt/', core_views.run_tmt, name='run_tmt'),
     path('assessments/<int:assessment_id>/stroop/', core_views.run_stroop, name='run_stroop'),
+    path('assessments/', include('apps.assessments.urls')),  # URLs do app assessments
     path('assessments/<int:assessment_id>/complete/', core_views.complete_assessment, name='complete_assessment'),
     
     path('admin/', admin.site.urls),

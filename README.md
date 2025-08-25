@@ -27,6 +27,25 @@ O sistema é projetado especificamente para atender às necessidades de:
 
 ---
 
+## 📁 Estrutura do Projeto
+
+```
+caresense-project/
+├── 📖 docs/              # Documentação técnica completa
+├── 🔧 scripts/           # Scripts utilitários e de setup
+│   ├── setup/           # Scripts de configuração
+│   └── tests/           # Scripts de teste standalone
+├── 🧪 tests/            # Testes automatizados organizados
+├── 💻 apps/             # Aplicações Django
+│   ├── assessments/     # Testes neuropsicológicos
+│   ├── patients/        # Gestão de pacientes
+│   ├── users/          # Sistema de usuários
+│   └── core/           # Funcionalidades centrais
+├── 🎨 templates/        # Templates HTML responsivos
+├── 📦 static/          # Arquivos estáticos (CSS, JS)
+└── ⚙️ caresense_project/ # Configurações Django
+```
+
 ## Sumário
 
 1. [Visão do Produto](#visão-do-produto)

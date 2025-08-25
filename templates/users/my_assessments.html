@@ -293,6 +293,19 @@
     display: inline-block;
 }
 
+/* Garantir que a tabela não corte o dropdown */
+.table-container {
+    overflow: visible; /* Changed from auto to visible */
+}
+
+.table {
+    overflow: visible; /* Ensure table cells don't clip dropdown */
+}
+
+.table td:last-child {
+    overflow: visible; /* Specifically for the actions column */
+}
+
 .btn-dots {
     background: none;
     border: none;
@@ -344,30 +357,15 @@
 
 .dropdown-menu {
     display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
+    position: fixed;  /* Changed from absolute to fixed */
     background: white;
     min-width: 220px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     border-radius: 8px;
     border: 1px solid #e9ecef;
     padding: 0.75rem 0;
-    z-index: 1050;
+    z-index: 9999;  /* Increased z-index */
     margin-top: 0.5rem;
-}
-
-.dropdown-menu.dropdown-up {
-    bottom: 100%;
-    top: auto;
-    margin-top: 0;
-    margin-bottom: 0.5rem;
-}
-
-.dropdown-menu.dropdown-right {
-    left: auto;
-    right: 0;
-    transform: none;
 }
 
 .dropdown.active .dropdown-menu {
@@ -856,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para fechar todos os dropdowns
     function closeAllDropdowns() {
         document.querySelectorAll('.dropdown.active').forEach(dropdown => {
-            dropdown.classList.remove('active', 'dropdown-up', 'dropdown-right');
+            dropdown.classList.remove('active');
         });
     }
     
@@ -874,6 +872,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isActive) {
                 // Resetar classes de posicionamento
                 dropdown.classList.remove('dropdown-up', 'dropdown-right');
+                dropdownMenu.style.left = '';
+                dropdownMenu.style.top = '';
+                dropdownMenu.style.bottom = '';
+                dropdownMenu.style.right = '';
                 
                 // Mostrar temporariamente para calcular dimensões
                 dropdownMenu.style.visibility = 'hidden';
@@ -884,20 +886,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 const viewportHeight = window.innerHeight;
                 const viewportWidth = window.innerWidth;
                 
-                // Verificar espaço vertical (baixo é padrão)
+                // Posicionar usando coordenadas fixas
+                let top = buttonRect.bottom + 8; // 8px de margem
+                let left = buttonRect.left;
+                
+                // Verificar espaço vertical
                 const spaceBelow = viewportHeight - buttonRect.bottom;
                 const spaceAbove = buttonRect.top;
                 
-                if (spaceBelow < dropdownRect.height + 10 && spaceAbove > spaceBelow) {
+                if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
+                    // Posicionar acima
+                    top = buttonRect.top - dropdownRect.height - 8;
                     dropdown.classList.add('dropdown-up');
                 }
                 
-                // Verificar espaço horizontal (esquerda é padrão)
+                // Verificar espaço horizontal
                 const spaceRight = viewportWidth - buttonRect.left;
                 
-                if (spaceRight < dropdownRect.width + 10) {
+                if (spaceRight < dropdownRect.width + 16) {
+                    // Posicionar à direita do botão
+                    left = buttonRect.right - dropdownRect.width;
                     dropdown.classList.add('dropdown-right');
                 }
+                
+                // Aplicar posição calculada
+                dropdownMenu.style.top = `${top}px`;
+                dropdownMenu.style.left = `${left}px`;
                 
                 // Restaurar visibilidade
                 dropdownMenu.style.visibility = 'visible';

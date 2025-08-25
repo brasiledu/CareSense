@@ -139,6 +139,12 @@ dmypy.json
 .DS_Store
 .AppleDouble
 .LSOverride
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
 # Thumbnails
 ._*
@@ -242,6 +248,8 @@ tmp/
 temp/
 .tmp/
 temporary_files/
+*.tmp
+*.temp
 
 # Static files collected
 static_root/
@@ -274,3 +282,13 @@ secrets.json
 *.pem
 *.key
 ssl_certificates/
+
+# IDE
+.vscode/settings.json
+.idea/
+*.sublime-*
+
+# Development
+test_output/
+debug_*.py
+temp_*.py

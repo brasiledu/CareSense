@@ -389,6 +389,40 @@
                     </div>
                 {% endif %}
             </div>
+            
+            <!-- Teste 4: MEEM -->
+            <div class="test-card test-{% if tests_completed.meem %}completed{% else %}pending{% endif %}">
+                <h3><i class="fas fa-brain"></i> Mini Exame do Estado Mental</h3>
+                <p>Avaliação cognitiva global (30 pontos)</p>
+                {% if tests_completed.meem %}
+                    <span class="badge badge-completed"><i class="fas fa-check"></i> Concluído</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'assessments:meem_test' assessment.id %}" class="btn" style="font-size: 0.9rem;"><i class="fas fa-redo"></i> Refazer</a>
+                    </div>
+                {% else %}
+                    <span class="badge badge-pending"><i class="fas fa-clock"></i> Pendente</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'assessments:meem_test' assessment.id %}" class="btn btn-success"><i class="fas fa-play"></i> Iniciar</a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Teste 5: Clock Drawing Test -->
+            <div class="test-card test-{% if tests_completed.clock_drawing %}completed{% else %}pending{% endif %}">
+                <h3><i class="fas fa-clock"></i> Teste do Relógio</h3>
+                <p>Avaliação das funções executivas (10 pontos)</p>
+                {% if tests_completed.clock_drawing %}
+                    <span class="badge badge-completed"><i class="fas fa-check"></i> Concluído</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'assessments:clock_drawing_test' assessment.id %}" class="btn" style="font-size: 0.9rem;"><i class="fas fa-redo"></i> Refazer</a>
+                    </div>
+                {% else %}
+                    <span class="badge badge-pending"><i class="fas fa-clock"></i> Pendente</span>
+                    <div style="margin-top: 1rem;">
+                        <a href="{% url 'assessments:clock_drawing_test' assessment.id %}" class="btn btn-success"><i class="fas fa-play"></i> Iniciar</a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
 
@@ -415,6 +449,8 @@
                 <li><strong>Span de Dígitos:</strong> Teste a capacidade de repetir sequências de números na ordem direta e inversa</li>
                 <li><strong>Trail Making Test:</strong> Meça o tempo para conectar números (Parte A) e alternar entre números e letras (Parte B)</li>
                 <li><strong>Teste de Stroop:</strong> Avalie o controle inibitório através da nomeação de cores com interferência</li>
+                <li><strong>MEEM:</strong> Avaliação cognitiva global com 11 domínios (orientação, memória, atenção, linguagem, praxia)</li>
+                <li><strong>Teste do Relógio:</strong> Avaliação das funções executivas através do desenho de um relógio (círculo, números, ponteiros)</li>
             </ol>
             
             <div class="alert-note">

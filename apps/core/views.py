@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 import json
 from apps.patients.models import Patient
-from apps.assessments.models import Assessment, DigitSpanResult, TMTResult, StroopResult
+from apps.assessments.models import Assessment, DigitSpanResult, TMTResult, StroopResult, MeemResult, ClockDrawingResult
 from apps.assessments.services import score_calculator
 from apps.users.models import User
 
@@ -192,7 +192,7 @@ def assessment_list(request):
         'all_patients': all_patients,
         'status_choices': Assessment.STATUS_CHOICES
     }
-    return render(request, 'assessments/assessment_list.html', context)
+    return render(request, 'assessments/management/assessment_list.html', context)
 
 def assessment_detail(request, assessment_id):
     """Detalhes de uma avaliação"""
@@ -224,7 +224,7 @@ def assessment_detail(request, assessment_id):
         'tmt_result': tmt_result,
         'stroop_result': stroop_result,
     }
-    return render(request, 'assessments/assessment_detail.html', context)
+    return render(request, 'assessments/management/assessment_detail.html', context)
 
 class PatientListView(View):
     def get(self, request):
@@ -317,7 +317,7 @@ def start_assessment(request):
     context = {
         'patients': patients_pending
     }
-    return render(request, 'assessments/start_assessment.html', context)
+    return render(request, 'assessments/management/start_assessment.html', context)
 
 def run_tests(request, assessment_id):
     """Página principal para executar os testes"""
@@ -328,6 +328,8 @@ def run_tests(request, assessment_id):
         'digit_span': hasattr(assessment, 'digit_span_result'),
         'tmt': hasattr(assessment, 'tmt_result'),
         'stroop': hasattr(assessment, 'stroop_result'),
+        'meem': hasattr(assessment, 'meem_result'),
+        'clock_drawing': hasattr(assessment, 'clock_drawing_result'),
     }
     
     context = {
@@ -335,7 +337,7 @@ def run_tests(request, assessment_id):
         'tests_completed': tests_completed,
         'all_completed': all(tests_completed.values()) if tests_completed else False
     }
-    return render(request, 'assessments/run_tests.html', context)
+    return render(request, 'assessments/management/run_tests.html', context)
 
 def run_digit_span(request, assessment_id):
     """Executar teste Digit Span"""
@@ -383,7 +385,7 @@ def run_digit_span(request, assessment_id):
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'assessments/digit_span_test.html', context)
+    return render(request, 'assessments/tests/digit_span_test.html', context)
 
 def run_tmt(request, assessment_id):
     """Executar teste TMT"""
@@ -434,7 +436,7 @@ def run_tmt(request, assessment_id):
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'assessments/tmt_test.html', context)
+    return render(request, 'assessments/tests/tmt_test.html', context)
 
 def run_stroop(request, assessment_id):
     """Executar teste Stroop"""
@@ -489,7 +491,7 @@ def run_stroop(request, assessment_id):
         return redirect('run_tests', assessment_id=assessment_id)
     
     context = {'assessment': assessment}
-    return render(request, 'assessments/stroop_test.html', context)
+    return render(request, 'assessments/tests/stroop_test.html', context)
 
 def complete_assessment(request, assessment_id):
     """Finalizar avaliação e calcular risco global"""
@@ -641,3 +643,288 @@ def patient_history(request, patient_id):
     }
     
     return render(request, 'patients/patient_history.html', context)
+
+@login_required
+def patients_dashboard(request):
+    """Dashboard de evolução de pacientes com análises detalhadas"""
+    from django.db.models import Avg, Count, Max, Min
+    
+    # Filtros
+    period = request.GET.get('period', '30')  # 30, 60, 90 dias ou 'all'
+    selected_patient_id = request.GET.get('patient', '')  # Filtro por paciente específico
+    test_type = request.GET.get('test_type', 'all')  # Filtro por tipo de teste
+    
+    # Aplicar filtro de período
+    if period != 'all':
+        cutoff_date = timezone.now().date() - timedelta(days=int(period))
+        assessments_query = Assessment.objects.filter(created_at__date__gte=cutoff_date)
+    else:
+        assessments_query = Assessment.objects.all()
+    
+    # Aplicar filtro de paciente
+    if selected_patient_id:
+        try:
+            assessments_query = assessments_query.filter(patient_id=int(selected_patient_id))
+        except (ValueError, TypeError):
+            selected_patient_id = ''
+    
+    # Estatísticas gerais
+    stats = {
+        'total_patients': Patient.objects.count(),
+        'patients_with_multiple_assessments': Patient.objects.annotate(
+            assessment_count=Count('assessments')
+        ).filter(assessment_count__gt=1).count(),
+        'total_assessments': assessments_query.count(),
+        'completed_assessments': assessments_query.filter(status='COMPLETED').count(),
+    }
+    
+    # Análise de evolução por paciente
+    patients_evolution = []
+    patients_with_multiple = Patient.objects.annotate(
+        assessment_count=Count('assessments')
+    ).filter(assessment_count__gt=1).prefetch_related('assessments')
+    
+    for patient in patients_with_multiple:
+        assessments = patient.assessments.filter(
+            status='COMPLETED'
+        ).order_by('created_at')
+        
+        if assessments.count() < 2:
+            continue
+            
+        # Calcular tendência baseada em Z-scores médios
+        first_assessment = assessments.first()
+        last_assessment = assessments.last()
+        
+        first_z_scores = []
+        last_z_scores = []
+        
+        # Coletar Z-scores do primeiro teste
+        if hasattr(first_assessment, 'digit_span_result') and first_assessment.digit_span_result.z_score:
+            first_z_scores.append(first_assessment.digit_span_result.z_score)
+        if hasattr(first_assessment, 'tmt_result'):
+            if first_assessment.tmt_result.z_score_a:
+                first_z_scores.append(-first_assessment.tmt_result.z_score_a)  # Inverter para TMT
+            if first_assessment.tmt_result.z_score_b:
+                first_z_scores.append(-first_assessment.tmt_result.z_score_b)
+        if hasattr(first_assessment, 'stroop_result') and first_assessment.stroop_result.z_score:
+            first_z_scores.append(-first_assessment.stroop_result.z_score)  # Inverter para Stroop
+        if hasattr(first_assessment, 'meem_result') and first_assessment.meem_result.z_score:
+            first_z_scores.append(first_assessment.meem_result.z_score)
+        if hasattr(first_assessment, 'clock_drawing_result') and first_assessment.clock_drawing_result.z_score:
+            first_z_scores.append(first_assessment.clock_drawing_result.z_score)
+        
+        # Coletar Z-scores do último teste
+        if hasattr(last_assessment, 'digit_span_result') and last_assessment.digit_span_result.z_score:
+            last_z_scores.append(last_assessment.digit_span_result.z_score)
+        if hasattr(last_assessment, 'tmt_result'):
+            if last_assessment.tmt_result.z_score_a:
+                last_z_scores.append(-last_assessment.tmt_result.z_score_a)
+            if last_assessment.tmt_result.z_score_b:
+                last_z_scores.append(-last_assessment.tmt_result.z_score_b)
+        if hasattr(last_assessment, 'stroop_result') and last_assessment.stroop_result.z_score:
+            last_z_scores.append(-last_assessment.stroop_result.z_score)
+        if hasattr(last_assessment, 'meem_result') and last_assessment.meem_result.z_score:
+            last_z_scores.append(last_assessment.meem_result.z_score)
+        if hasattr(last_assessment, 'clock_drawing_result') and last_assessment.clock_drawing_result.z_score:
+            last_z_scores.append(last_assessment.clock_drawing_result.z_score)
+            last_z_scores.append(-last_assessment.stroop_result.z_score)
+        
+        if first_z_scores and last_z_scores:
+            first_avg = sum(first_z_scores) / len(first_z_scores)
+            last_avg = sum(last_z_scores) / len(last_z_scores)
+            improvement = last_avg - first_avg
+            
+            # Determinar tendência
+            if improvement > 0.5:
+                trend = 'improving'
+                trend_label = 'Melhorando'
+                trend_color = '#28a745'
+            elif improvement < -0.5:
+                trend = 'declining'
+                trend_label = 'Piorando'
+                trend_color = '#dc3545'
+            else:
+                trend = 'stable'
+                trend_label = 'Estável'
+                trend_color = '#ffc107'
+            
+            patients_evolution.append({
+                'patient': patient,
+                'first_date': first_assessment.created_at,
+                'last_date': last_assessment.created_at,
+                'first_avg_z': round(first_avg, 2),
+                'last_avg_z': round(last_avg, 2),
+                'improvement': round(improvement, 2),
+                'trend': trend,
+                'trend_label': trend_label,
+                'trend_color': trend_color,
+                'assessment_count': assessments.count(),
+                'days_between': (last_assessment.created_at.date() - first_assessment.created_at.date()).days
+            })
+    
+    # Ordenar por melhoria (maiores melhorias primeiro)
+    patients_evolution.sort(key=lambda x: x['improvement'], reverse=True)
+    
+    # Estatísticas de evolução
+    evolution_stats = {
+        'improving_count': len([p for p in patients_evolution if p['trend'] == 'improving']),
+        'declining_count': len([p for p in patients_evolution if p['trend'] == 'declining']),
+        'stable_count': len([p for p in patients_evolution if p['trend'] == 'stable']),
+    }
+    
+    # Dados para gráfico de evolução temporal (média de Z-scores por semana)
+    timeline_data = []
+    timeline_labels = []
+    
+    # Dados específicos por teste para gráficos
+    test_performance_data = {
+        'digit_span': {'labels': [], 'data': []},
+        'tmt_a': {'labels': [], 'data': []},
+        'tmt_b': {'labels': [], 'data': []},
+        'stroop': {'labels': [], 'data': []},
+        'meem': {'labels': [], 'data': []},
+        'clock_drawing': {'labels': [], 'data': []}
+    }
+    
+    # Calcular médias diárias dos últimos 30 dias
+    for day in range(30):
+        day_date = timezone.now().date() - timedelta(days=day)
+        
+        day_assessments = assessments_query.filter(
+            status='COMPLETED',
+            created_at__date=day_date
+        )
+        
+        day_z_scores = []
+        day_test_scores = {
+            'digit_span': [],
+            'tmt_a': [],
+            'tmt_b': [],
+            'stroop': [],
+            'meem': [],
+            'clock_drawing': []
+        }
+        
+        for assessment in day_assessments:
+            # Digit Span
+            if hasattr(assessment, 'digit_span_result') and assessment.digit_span_result.z_score:
+                score = assessment.digit_span_result.z_score
+                day_z_scores.append(score)
+                day_test_scores['digit_span'].append(score)
+            
+            # TMT
+            if hasattr(assessment, 'tmt_result'):
+                if assessment.tmt_result.z_score_a:
+                    score_a = -assessment.tmt_result.z_score_a  # Inverter para TMT
+                    day_z_scores.append(score_a)
+                    day_test_scores['tmt_a'].append(score_a)
+                if assessment.tmt_result.z_score_b:
+                    score_b = -assessment.tmt_result.z_score_b
+                    day_z_scores.append(score_b)
+                    day_test_scores['tmt_b'].append(score_b)
+            
+            # Stroop
+            if hasattr(assessment, 'stroop_result') and assessment.stroop_result.z_score:
+                score = -assessment.stroop_result.z_score  # Inverter para Stroop
+                day_z_scores.append(score)
+                day_test_scores['stroop'].append(score)
+            
+            # MEEM
+            if hasattr(assessment, 'meem_result') and assessment.meem_result.z_score:
+                score = assessment.meem_result.z_score
+                day_z_scores.append(score)
+                day_test_scores['meem'].append(score)
+            
+            # Clock Drawing
+            if hasattr(assessment, 'clock_drawing_result') and assessment.clock_drawing_result.z_score:
+                score = assessment.clock_drawing_result.z_score
+                day_z_scores.append(score)
+                day_test_scores['clock_drawing'].append(score)
+        
+        # Calcular médias
+        if day_z_scores:
+            avg_z_score = sum(day_z_scores) / len(day_z_scores)
+        else:
+            avg_z_score = 0
+        
+        timeline_data.insert(0, round(avg_z_score, 2))
+        timeline_labels.insert(0, day_date.strftime('%d/%m'))
+        
+        # Adicionar dados específicos por teste
+        for test_name, scores in day_test_scores.items():
+            if scores:
+                avg_score = sum(scores) / len(scores)
+                test_performance_data[test_name]['data'].insert(0, round(avg_score, 2))
+            else:
+                test_performance_data[test_name]['data'].insert(0, 0)
+            test_performance_data[test_name]['labels'].insert(0, day_date.strftime('%d/%m'))
+    
+    # Estatísticas por teste
+    test_stats = {}
+    completed_assessments = assessments_query.filter(status='COMPLETED')
+    
+    for test_name in ['digit_span', 'tmt', 'stroop', 'meem', 'clock_drawing']:
+        if test_name == 'digit_span':
+            test_results = [a.digit_span_result for a in completed_assessments if hasattr(a, 'digit_span_result')]
+            z_scores = [r.z_score for r in test_results if r.z_score is not None]
+        elif test_name == 'tmt':
+            test_results = [a.tmt_result for a in completed_assessments if hasattr(a, 'tmt_result')]
+            z_scores = []
+            for r in test_results:
+                if r.z_score_a: z_scores.append(-r.z_score_a)
+                if r.z_score_b: z_scores.append(-r.z_score_b)
+        elif test_name == 'stroop':
+            test_results = [a.stroop_result for a in completed_assessments if hasattr(a, 'stroop_result')]
+            z_scores = [-r.z_score for r in test_results if r.z_score is not None]
+        elif test_name == 'meem':
+            test_results = [a.meem_result for a in completed_assessments if hasattr(a, 'meem_result')]
+            z_scores = [r.z_score for r in test_results if r.z_score is not None]
+        elif test_name == 'clock_drawing':
+            test_results = [a.clock_drawing_result for a in completed_assessments if hasattr(a, 'clock_drawing_result')]
+            z_scores = [r.z_score for r in test_results if r.z_score is not None]
+        
+        if z_scores:
+            test_stats[test_name] = {
+                'count': len(z_scores),
+                'avg_z_score': round(sum(z_scores) / len(z_scores), 2),
+                'min_z_score': round(min(z_scores), 2),
+                'max_z_score': round(max(z_scores), 2),
+                'below_normal': len([z for z in z_scores if z < -1.5]),
+                'normal': len([z for z in z_scores if -1.5 <= z <= 1.5]),
+                'above_normal': len([z for z in z_scores if z > 1.5])
+            }
+        else:
+            test_stats[test_name] = {
+                'count': 0, 'avg_z_score': 0, 'min_z_score': 0, 'max_z_score': 0,
+                'below_normal': 0, 'normal': 0, 'above_normal': 0
+            }
+    
+    # Lista de pacientes para o filtro
+    all_patients = Patient.objects.all().order_by('full_name')
+    selected_patient = None
+    if selected_patient_id:
+        try:
+            selected_patient = Patient.objects.get(id=int(selected_patient_id))
+        except Patient.DoesNotExist:
+            pass
+    
+    context = {
+        'stats': stats,
+        'patients_evolution': patients_evolution[:20],  # Top 20
+        'evolution_stats': evolution_stats,
+        'timeline_data': json.dumps(timeline_data),
+        'timeline_labels': json.dumps(timeline_labels),
+        'test_performance_data': json.dumps(test_performance_data),
+        'test_stats': test_stats,
+        'period': period,
+        'selected_patient_id': selected_patient_id,
+        'selected_patient': selected_patient,
+        'test_type': test_type,
+        'all_patients': all_patients,
+        'improving_patients': [p for p in patients_evolution if p['trend'] == 'improving'][:5],
+        'declining_patients': [p for p in patients_evolution if p['trend'] == 'declining'][:5],
+    }
+    
+    return render(request, 'core/patients_dashboard.html', context)
+

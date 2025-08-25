@@ -127,6 +127,19 @@
     display: inline-block;
 }
 
+/* Garantir que a tabela não corte o dropdown */
+.table-container {
+    overflow: visible;
+}
+
+.table {
+    overflow: visible;
+}
+
+.table td:last-child {
+    overflow: visible;
+}
+
 .btn-dots {
     background: none;
     border: none;
@@ -149,15 +162,13 @@
 
 .dropdown-menu {
     display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
     background-color: white;
     min-width: 180px;
     max-width: 90vw;
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     border-radius: 8px;
-    z-index: 1050;
+    z-index: 9999;
     border: 1px solid #e9ecef;
     padding: 0.5rem 0;
     margin-top: 2px;
@@ -208,7 +219,7 @@
 }
 
 .dropdown-item {
-    color: #495057;
+    color: #000000;
     padding: 0.75rem 1rem;
     text-decoration: none;
     display: flex;
@@ -220,7 +231,7 @@
 .dropdown-item:hover {
     background-color: #f8f9fa;
     text-decoration: none;
-    color: #495057;
+    color: #000000;
 }
 
 .dropdown-item i {
@@ -236,24 +247,10 @@
     animation: fadeInDropdown 0.2s ease-out;
 }
 
-.dropdown-menu.dropdown-up {
-    bottom: 100%;
-    top: auto;
-    margin-top: 0;
-    margin-bottom: 0.25rem;
-}
-
-.dropdown-menu.dropdown-left {
-    right: auto;
-    left: 0;
-}
-
-.dropdown-menu.dropdown-up.show {
-    animation: fadeInDropdownUp 0.2s ease-out;
-}
+/* Classes de posicionamento são agora controladas por JavaScript */
 
 .dropdown-item {
-    color: #495057;
+    color: #000000;
     padding: 0.75rem 1.25rem;
     text-decoration: none;
     display: flex;
@@ -267,7 +264,7 @@
 .dropdown-item:hover {
     background-color: #f8f9fa;
     text-decoration: none;
-    color: #495057;
+    color: #000000;
     border-left-color: #007bff;
     transform: translateX(3px);
 }
@@ -386,7 +383,12 @@
 </style>
 
 <div class="card">
-    <h1><i class="fas fa-users"></i> Gerenciamento de Pacientes</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1><i class="fas fa-users"></i> Gerenciamento de Pacientes</h1>
+        <a href="{% url 'patients_dashboard' %}" class="btn" style="background: #28a745; color: white;">
+            <i class="fas fa-chart-line"></i> Dashboard de Evolução
+        </a>
+    </div>
     
     <form method="GET" class="search-form">
         <input type="text" name="search" value="{{ search }}" placeholder="Buscar por nome ou número do quarto..." class="search-input">
@@ -529,7 +531,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Função para fechar todos os dropdowns
     function closeAllDropdowns() {
         document.querySelectorAll('.dropdown.active').forEach(dropdown => {
-            dropdown.classList.remove('active', 'dropdown-up', 'dropdown-right');
+            dropdown.classList.remove('active');
         });
     }
     
@@ -545,8 +547,11 @@ document.addEventListener('DOMContentLoaded', function() {
             closeAllDropdowns();
             
             if (!isActive) {
-                // Resetar classes de posicionamento
-                dropdown.classList.remove('dropdown-up', 'dropdown-right');
+                // Resetar posicionamento
+                dropdownMenu.style.left = '';
+                dropdownMenu.style.top = '';
+                dropdownMenu.style.bottom = '';
+                dropdownMenu.style.right = '';
                 
                 // Mostrar temporariamente para calcular dimensões
                 dropdownMenu.style.visibility = 'hidden';
@@ -557,20 +562,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 const viewportHeight = window.innerHeight;
                 const viewportWidth = window.innerWidth;
                 
-                // Verificar espaço vertical (baixo é padrão)
+                // Posicionar usando coordenadas fixas
+                let top = buttonRect.bottom + 8; // 8px de margem
+                let left = buttonRect.right - dropdownRect.width; // Alinhar à direita por padrão
+                
+                // Verificar espaço vertical
                 const spaceBelow = viewportHeight - buttonRect.bottom;
                 const spaceAbove = buttonRect.top;
                 
-                if (spaceBelow < dropdownRect.height + 10 && spaceAbove > spaceBelow) {
-                    dropdown.classList.add('dropdown-up');
+                if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
+                    // Posicionar acima
+                    top = buttonRect.top - dropdownRect.height - 8;
                 }
                 
-                // Verificar espaço horizontal (esquerda é padrão)
-                const spaceRight = viewportWidth - buttonRect.left;
+                // Verificar espaço horizontal
+                const spaceLeft = buttonRect.right;
                 
-                if (spaceRight < dropdownRect.width + 10) {
-                    dropdown.classList.add('dropdown-right');
+                if (spaceLeft < dropdownRect.width + 16) {
+                    // Posicionar à esquerda do botão
+                    left = buttonRect.left;
                 }
+                
+                // Garantir que não saia da tela
+                if (left < 8) left = 8;
+                if (left + dropdownRect.width > viewportWidth - 8) {
+                    left = viewportWidth - dropdownRect.width - 8;
+                }
+                
+                // Aplicar posição calculada
+                dropdownMenu.style.top = `${top}px`;
+                dropdownMenu.style.left = `${left}px`;
                 
                 // Restaurar visibilidade
                 dropdownMenu.style.visibility = 'visible';

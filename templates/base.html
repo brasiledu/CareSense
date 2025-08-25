@@ -216,7 +216,7 @@
             display: flex;
             align-items: center;
             padding: 0.875rem 1.25rem;
-            color: #2c3e50;
+            color: #000000;
             text-decoration: none;
             transition: all 0.3s ease;
             font-size: 0.9rem;
@@ -227,7 +227,7 @@
         .dropdown-item:hover {
             background: #e9ecef;
             text-decoration: none;
-            color: #2c3e50;
+            color: #000000;
             border-left-color: #007bff;
             transform: translateX(2px);
         }
@@ -295,6 +295,17 @@
         }
         
         .assessments-dropdown .dropdown-item:hover {
+            background: #e9ecef;
+            color: #000000 !important;
+            border-left-color: #007bff;
+        }
+
+        /* Dropdown de pacientes com itens pretos */
+        .user-dropdown-container .dropdown-item {
+            color: #000000 !important;
+        }
+        
+        .user-dropdown-container .dropdown-item:hover {
             background: #e9ecef;
             color: #000000 !important;
             border-left-color: #007bff;
@@ -747,7 +758,22 @@
             <!-- Menu desktop -->
             <ul class="navbar-nav desktop-nav">
                 <li><a href="/dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="/patients/"><i class="fas fa-users"></i> Pacientes</a></li>
+                
+                <!-- Dropdown de Pacientes -->
+                <li class="dropdown user-dropdown-container">
+                    <button class="user-menu-btn">
+                        <i class="fas fa-users"></i> Pacientes
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu user-dropdown-menu">
+                        <a href="/patients/" class="dropdown-item">
+                            <i class="fas fa-list"></i> Lista de Pacientes
+                        </a>
+                        <a href="/patients/dashboard/" class="dropdown-item">
+                            <i class="fas fa-chart-line"></i> Dashboard de Evolução
+                        </a>
+                    </div>
+                </li>
                 
                 <!-- Dropdown de Avaliações -->
                 <li class="dropdown user-dropdown-container assessments-dropdown">
@@ -828,9 +854,19 @@
                     <a href="/dashboard/" class="mobile-nav-item">
                         <i class="fas fa-tachometer-alt"></i> Dashboard
                     </a>
-                    <a href="/patients/" class="mobile-nav-item">
-                        <i class="fas fa-users"></i> Pacientes
-                    </a>
+                    
+                    <!-- Seção de Pacientes -->
+                    <div class="mobile-nav-section">
+                        <div class="mobile-nav-header">
+                            <i class="fas fa-users"></i> Pacientes
+                        </div>
+                        <a href="/patients/" class="mobile-nav-subitem">
+                            <i class="fas fa-list"></i> Lista de Pacientes
+                        </a>
+                        <a href="/patients/dashboard/" class="mobile-nav-subitem">
+                            <i class="fas fa-chart-line"></i> Dashboard de Evolução
+                        </a>
+                    </div>
                     
                     <!-- Seção de Avaliações -->
                     <div class="mobile-nav-section">

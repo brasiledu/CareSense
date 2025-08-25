@@ -1,16 +1,19 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework import generics, status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
-from .models import Assessment, DigitSpanResult, TMTResult, StroopResult
+from .models import Assessment, DigitSpanResult, TMTResult, StroopResult, MeemResult, ClockDrawingResult
 from .serializers import (
     AssessmentListSerializer, AssessmentDetailSerializer, AssessmentCreateSerializer,
-    SubmitDigitSpanSerializer, SubmitTMTSerializer, SubmitStroopSerializer,
-    DigitSpanResultSerializer, TMTResultSerializer, StroopResultSerializer
+    SubmitDigitSpanSerializer, SubmitTMTSerializer, SubmitStroopSerializer, SubmitMeemSerializer,
+    DigitSpanResultSerializer, TMTResultSerializer, StroopResultSerializer, MeemResultSerializer
 )
 from .services import calculate_final_risk
+from .forms import MeemForm
 
 class AssessmentViewSet(viewsets.ModelViewSet):
     """
@@ -165,6 +168,44 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=True, methods=['post'], url_path='submit-meem')
+    def submit_meem(self, request, pk=None):
+        """
+        Endpoint para submeter resultado do teste MEEM
+        POST /api/assessments/<id>/submit-meem/
+        """
+        assessment = self.get_object()
+        
+        if assessment.assessor != request.user:
+            return Response(
+                {'error': 'Você não tem permissão para modificar esta avaliação'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if hasattr(assessment, 'meem_result'):
+            return Response(
+                {'error': 'Resultado do MEEM já foi submetido para esta avaliação'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = SubmitMeemSerializer(data=request.data)
+        if serializer.is_valid():
+            with transaction.atomic():
+                meem_result = MeemResult.objects.create(
+                    assessment=assessment,
+                    **serializer.validated_data
+                )
+                
+                assessment.status = 'IN_PROGRESS'
+                assessment.save()
+                
+                self._check_and_calculate_final_score(assessment)
+                
+                result_serializer = MeemResultSerializer(meem_result)
+                return Response(result_serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def _check_and_calculate_final_score(self, assessment):
         """
         Verifica se todos os testes foram completados e calcula a pontuação final
@@ -172,8 +213,9 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         has_digit_span = hasattr(assessment, 'digit_span_result')
         has_tmt = hasattr(assessment, 'tmt_result')
         has_stroop = hasattr(assessment, 'stroop_result')
+        has_meem = hasattr(assessment, 'meem_result')
         
-        if has_digit_span and has_tmt and has_stroop:
+        if has_digit_span and has_tmt and has_stroop and has_meem:
             # Todos os testes completados, calcular pontuação final
             try:
                 final_score = calculate_final_risk(assessment.id)
@@ -201,6 +243,9 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         
         if hasattr(assessment, 'stroop_result'):
             results['stroop'] = StroopResultSerializer(assessment.stroop_result).data
+        
+        if hasattr(assessment, 'meem_result'):
+            results['meem'] = MeemResultSerializer(assessment.meem_result).data
         
         return Response({
             'assessment_id': assessment.id,
@@ -237,3 +282,113 @@ class AssessmentViewSet(viewsets.ModelViewSet):
                 {'error': f'Erro ao recalcular pontuação: {str(e)}'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+@login_required
+def meem_test_view(request, assessment_id):
+    """
+    View para aplicação do teste MEEM
+    """
+    assessment = get_object_or_404(Assessment, id=assessment_id)
+    
+    # Verificar se o usuário tem permissão
+    if assessment.assessor != request.user:
+        messages.error(request, 'Você não tem permissão para acessar esta avaliação.')
+        return redirect('assessment_list')
+    
+    # Verificar se já existe resultado MEEM
+    if hasattr(assessment, 'meem_result'):
+        messages.info(request, 'O teste MEEM já foi aplicado nesta avaliação.')
+        return redirect('run_tests', assessment_id=assessment.id)
+    
+    if request.method == 'POST':
+        form = MeemForm(request.POST)
+        if form.is_valid():
+            # Criar resultado MEEM
+            meem_result = form.save(commit=False)
+            meem_result.assessment = assessment
+            meem_result.save()
+            
+            # Calcular Z-score usando dados normativos brasileiros
+            from .services import score_calculator
+            patient = assessment.patient
+            total_score = meem_result.total_score
+            z_score = score_calculator.calculate_meem_z_score(patient, total_score)
+            
+            # Atualizar resultado com z-score
+            meem_result.z_score = round(z_score, 2)
+            meem_result.save()
+            
+            # Atualizar status do assessment
+            assessment.status = 'IN_PROGRESS'
+            assessment.save()
+            
+            messages.success(request, 'Teste MEEM aplicado com sucesso!')
+            return redirect('run_tests', assessment_id=assessment.id)
+        else:
+            messages.error(request, 'Por favor, corrija os erros no formulário.')
+    else:
+        form = MeemForm()
+    
+    context = {
+        'assessment': assessment,
+        'form': form,
+        'patient': assessment.patient,
+    }
+    
+    return render(request, 'assessments/tests/meem_test.html', context)
+
+@login_required
+def clock_drawing_test_view(request, assessment_id):
+    """
+    View para aplicação do Teste do Relógio (Clock Drawing Test)
+    """
+    assessment = get_object_or_404(Assessment, id=assessment_id)
+    
+    # Verificar se o usuário tem permissão
+    if assessment.assessor != request.user:
+        messages.error(request, 'Você não tem permissão para acessar esta avaliação.')
+        return redirect('assessment_list')
+    
+    # Verificar se já existe resultado do Clock Drawing Test
+    if hasattr(assessment, 'clock_drawing_result'):
+        messages.info(request, 'O Teste do Relógio já foi aplicado nesta avaliação.')
+        return redirect('run_tests', assessment_id=assessment.id)
+    
+    if request.method == 'POST':
+        from .forms import ClockDrawingForm
+        form = ClockDrawingForm(request.POST)
+        if form.is_valid():
+            # Criar resultado do Clock Drawing Test
+            clock_result = form.save(commit=False)
+            clock_result.assessment = assessment
+            clock_result.save()
+            
+            # Calcular Z-score usando dados normativos
+            from .services import score_calculator
+            patient = assessment.patient
+            total_score = clock_result.total_score
+            z_score = score_calculator.calculate_clock_drawing_z_score(patient, total_score)
+            
+            # Atualizar resultado com z-score
+            clock_result.z_score = round(z_score, 2)
+            clock_result.save()
+            
+            # Atualizar status do assessment
+            assessment.status = 'IN_PROGRESS'
+            assessment.save()
+            
+            messages.success(request, 'Teste do Relógio aplicado com sucesso!')
+            return redirect('run_tests', assessment_id=assessment.id)
+        else:
+            messages.error(request, 'Por favor, corrija os erros no formulário.')
+    else:
+        from .forms import ClockDrawingForm
+        form = ClockDrawingForm()
+    
+    context = {
+        'assessment': assessment,
+        'form': form,
+        'patient': assessment.patient,
+    }
+    
+    return render(request, 'assessments/tests/clock_drawing_test.html', context)

@@ -169,6 +169,72 @@ class AssessmentScoreCalculator:
         norms = self.normative_data["stroop"][age_group][education_group]
         return self.calculate_z_score(interference_time, norms["mean"], norms["sd"])
     
+    def calculate_meem_z_score(self, patient, total_score):
+        """
+        Calcula o Z-Score para MEEM (pontuação total 0-30)
+        Para MEEM: maior pontuação = melhor desempenho (como Digit Span)
+        Valores negativos indicam déficit cognitivo
+        """
+        age_group = self._get_age_group(patient.age)
+        education_group = self._get_education_group(patient)
+        
+        # Verificar se temos dados normativos para MEEM
+        if "meem" in self.normative_data:
+            norms = self.normative_data["meem"][age_group][education_group]
+            return self.calculate_z_score(total_score, norms["mean"], norms["sd"])
+        else:
+            # Dados normativos baseados em Brucki et al. (2003) - estimativa
+            if education_group == "high_education":
+                mean_score = 28.5
+                sd_score = 1.8
+            else:  # low_education
+                mean_score = 25.2
+                sd_score = 2.3
+            
+            return self.calculate_z_score(total_score, mean_score, sd_score)
+    
+    def calculate_clock_drawing_z_score(self, patient, total_score):
+        """
+        Calcula Z-Score para o Teste do Relógio (0-10 pontos)
+        Baseado em dados normativos de Cacho-Gutiérrez et al. (1999)
+        """
+        try:
+            age = getattr(patient, 'age', 65)
+            education_years = getattr(patient, 'education_years', 8)
+            
+            # Dados normativos aproximados para Clock Drawing Test
+            # Pontuação média varia por idade e escolaridade
+            if age < 65:
+                if education_years <= 8:
+                    mean_score = 8.5
+                    sd = 1.2
+                else:
+                    mean_score = 9.2
+                    sd = 0.9
+            elif age < 75:
+                if education_years <= 8:
+                    mean_score = 7.8
+                    sd = 1.5
+                else:
+                    mean_score = 8.7
+                    sd = 1.1
+            else:  # 75+
+                if education_years <= 8:
+                    mean_score = 7.2
+                    sd = 1.8
+                else:
+                    mean_score = 8.0
+                    sd = 1.4
+            
+            # Calcular Z-Score
+            z_score = (total_score - mean_score) / sd
+            
+            return round(z_score, 2)
+            
+        except Exception as e:
+            print(f"Erro ao calcular Z-Score do Clock Drawing: {e}")
+            return 0.0
+    
     def calculate_final_risk_score(self, assessment_id):
         """
         Calcula a pontuação final de risco baseada nos Z-Scores dos três testes
@@ -211,6 +277,24 @@ class AssessmentScoreCalculator:
                 stroop_result.save()
                 z_scores.append(z_score)
             
+            # Adicionar MEEM se disponível
+            if hasattr(assessment, 'meem_result'):
+                meem_result = assessment.meem_result
+                total_score = meem_result.total_score
+                z_score = self.calculate_meem_z_score(patient, total_score)
+                meem_result.z_score = z_score
+                meem_result.save()
+                z_scores.append(z_score)
+            
+            # Adicionar Clock Drawing Test se disponível
+            if hasattr(assessment, 'clock_drawing_result'):
+                clock_result = assessment.clock_drawing_result
+                total_score = clock_result.total_score
+                z_score = self.calculate_clock_drawing_z_score(patient, total_score)
+                clock_result.z_score = z_score
+                clock_result.save()
+                z_scores.append(z_score)
+            
             # Determina o risco final baseado na média dos Z-Scores
             if z_scores:
                 avg_z_score = sum(z_scores) / len(z_scores)
@@ -250,3 +334,10 @@ def calculate_tmt_z_score(patient, time_seconds, errors):
     RF05 - Motor de Pontuação
     """
     return score_calculator.calculate_tmt_z_scores(patient, time_seconds, 0, errors, 0)
+
+def calculate_clock_drawing_z_score(patient, total_score):
+    """
+    Função específica para calcular Z-Score do Clock Drawing Test
+    RF05 - Motor de Pontuação
+    """
+    return score_calculator.calculate_clock_drawing_z_score(patient, total_score)

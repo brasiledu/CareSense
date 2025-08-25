@@ -1,0 +1,798 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Pacientes - AvivaMente{% endblock %}
+
+{% block content %}
+<style>
+/* Estilos específicos para o dashboard de pacientes */
+.patients-dashboard {
+    padding: 0;
+    margin: 0;
+}
+
+/* Classes para valores condicionais */
+.trend-value[data-trend="improving"] {
+    color: #28a745;
+}
+
+.trend-value[data-trend="declining"] {
+    color: #dc3545;
+}
+
+.trend-value[data-trend="stable"] {
+    color: #ffc107;
+}
+
+.z-score-value[data-score*="-"] {
+    color: #dc3545;
+}
+
+.z-score-value:not([data-score*="-"]) {
+    color: #28a745;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.page-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #3498db;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.section-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+}
+
+.section-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-content {
+    padding: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 1rem 0;
+}
+
+.evolution-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.patient-evolution-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.patient-evolution-item.improving {
+    border-left-color: #28a745;
+    background: #f8fff9;
+}
+
+.patient-evolution-item.declining {
+    border-left-color: #dc3545;
+    background: #fff8f8;
+}
+
+.patient-evolution-item.stable {
+    border-left-color: #ffc107;
+    background: #fffcf0;
+}
+
+.patient-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    text-decoration: none;
+}
+
+.patient-name:hover {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.evolution-metrics {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+}
+
+.trend-improving {
+    background: #28a745;
+}
+
+.trend-declining {
+    background: #dc3545;
+}
+
+.trend-stable {
+    background: #ffc107;
+    color: #212529;
+}
+
+.filter-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    border: 1px solid #e9ecef;
+}
+
+.filter-group {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 0.5rem;
+    white-space: nowrap;
+}
+
+.filter-group select {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    min-width: 150px;
+    transition: border-color 0.3s ease;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.alert-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.alert-card {
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid;
+}
+
+.alert-success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.patient-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.patient-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.patient-list li:last-child {
+    border-bottom: none;
+}
+
+.improvement-score {
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.improvement-positive {
+    background: rgba(40, 167, 69, 0.2);
+    color: #155724;
+}
+
+.improvement-negative {
+    background: rgba(220, 53, 69, 0.2);
+    color: #721c24;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .patients-dashboard {
+        padding: 0.5rem;
+    }
+    
+    .page-header {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .page-title {
+        font-size: 1.8rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .evolution-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    .section-content {
+        padding: 1rem;
+    }
+    
+    .alert-section {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="patients-dashboard">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-chart-line"></i>
+            Dashboard de Pacientes
+        </h1>
+        <p class="page-subtitle">
+            Análise de evolução e tendências dos pacientes ao longo do tempo
+        </p>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-section">
+        <form method="get" id="filterForm">
+            <div class="filter-group">
+                <label for="period">Período de Análise:</label>
+                <select name="period" id="period" onchange="document.getElementById('filterForm').submit()">
+                    <option value="30" {% if period == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                    <option value="60" {% if period == '60' %}selected{% endif %}>Últimos 60 dias</option>
+                    <option value="90" {% if period == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                    <option value="all" {% if period == 'all' %}selected{% endif %}>Todos os registros</option>
+                </select>
+                
+                <label for="patient">Paciente Específico:</label>
+                <select name="patient" id="patient" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Todos os pacientes</option>
+                    {% for patient in all_patients %}
+                    <option value="{{ patient.id }}" {% if selected_patient_id == patient.id|stringformat:"s" %}selected{% endif %}>
+                        {{ patient.full_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+                
+                <label for="test_type">Tipo de Teste:</label>
+                <select name="test_type" id="test_type" onchange="document.getElementById('filterForm').submit()">
+                    <option value="all" {% if test_type == 'all' %}selected{% endif %}>Todos os testes</option>
+                    <option value="digit_span" {% if test_type == 'digit_span' %}selected{% endif %}>Digit Span</option>
+                    <option value="tmt" {% if test_type == 'tmt' %}selected{% endif %}>TMT</option>
+                    <option value="stroop" {% if test_type == 'stroop' %}selected{% endif %}>Stroop</option>
+                    <option value="meem" {% if test_type == 'meem' %}selected{% endif %}>MEEM</option>
+                    <option value="clock_drawing" {% if test_type == 'clock_drawing' %}selected{% endif %}>Clock Drawing</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Estatísticas Gerais -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.total_patients }}</span>
+            <span class="stat-label">Total de Pacientes</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ stats.patients_with_multiple_assessments }}</span>
+            <span class="stat-label">Com Múltiplas Avaliações</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ evolution_stats.improving_count }}</span>
+            <span class="stat-label">Em Melhora</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ evolution_stats.declining_count }}</span>
+            <span class="stat-label">Em Declínio</span>
+        </div>
+    </div>
+
+    <!-- Alertas e Insights -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-exclamation-triangle"></i>
+                Alertas e Insights
+            </h2>
+        </div>
+        <div class="section-content">
+            <div class="alert-section">
+                {% if improving_patients %}
+                <div class="alert-card alert-success">
+                    <h4><i class="fas fa-arrow-up"></i> Pacientes em Melhora</h4>
+                    <ul class="patient-list">
+                        {% for patient in improving_patients %}
+                        <li>
+                            <a href="{% url 'patient_detail' patient.patient.id %}" class="patient-name">
+                                {{ patient.patient.full_name }}
+                            </a>
+                            <span class="improvement-score improvement-positive">
+                                +{{ patient.improvement }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                {% if declining_patients %}
+                <div class="alert-card alert-danger">
+                    <h4><i class="fas fa-arrow-down"></i> Pacientes Necessitando Atenção</h4>
+                    <ul class="patient-list">
+                        {% for patient in declining_patients %}
+                        <li>
+                            <a href="{% url 'patient_detail' patient.patient.id %}" class="patient-name">
+                                {{ patient.patient.full_name }}
+                            </a>
+                            <span class="improvement-score improvement-negative">
+                                {{ patient.improvement }}
+                            </span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Evolução Temporal -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-chart-line"></i>
+                Evolução Temporal dos Z-Scores
+            </h2>
+        </div>
+        <div class="section-content">
+            <div class="chart-container">
+                <canvas id="evolutionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Evolução dos Pacientes -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-users"></i>
+                Evolução Individual dos Pacientes
+            </h2>
+        </div>
+        <div class="section-content">
+            {% if patients_evolution %}
+            <div class="evolution-grid">
+                {% for patient in patients_evolution %}
+                <div class="patient-evolution-item {{ patient.trend }}">
+                    <a href="{% url 'patient_detail' patient.patient.id %}" class="patient-name">
+                        {{ patient.patient.full_name }}
+                    </a>
+                    <div class="evolution-metrics">
+                        <span>{{ patient.assessment_count }} avaliações</span>
+                        <span>{{ patient.days_between }} dias</span>
+                    </div>
+                    <div style="margin: 0.5rem 0;">
+                        <small>Z-Score inicial: <strong>{{ patient.first_avg_z }}</strong></small><br>
+                        <small>Z-Score atual: <strong>{{ patient.last_avg_z }}</strong></small>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="trend-indicator trend-{{ patient.trend }}">
+                            {% if patient.trend == 'improving' %}
+                                <i class="fas fa-arrow-up"></i>
+                            {% elif patient.trend == 'declining' %}
+                                <i class="fas fa-arrow-down"></i>
+                            {% else %}
+                                <i class="fas fa-minus"></i>
+                            {% endif %}
+                            {{ patient.trend_label }}
+                        </span>
+                        <strong class="trend-value" data-trend="{{ patient.trend }}">
+                            {% if patient.improvement > 0 %}+{% endif %}{{ patient.improvement }}
+                        </strong>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                <i class="fas fa-chart-line" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                <h3>Dados Insuficientes</h3>
+                <p>É necessário que os pacientes tenham pelo menos duas avaliações completas para análise de evolução.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estatísticas por Teste -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-chart-bar"></i>
+                Performance por Tipo de Teste
+            </h2>
+        </div>
+        <div class="section-content">
+            <div class="stats-grid">
+                {% for test_name, stats in test_stats.items %}
+                <div class="stat-card">
+                    <h4>
+                        {% if test_name == 'digit_span' %}Digit Span
+                        {% elif test_name == 'tmt' %}TMT
+                        {% elif test_name == 'stroop' %}Stroop
+                        {% elif test_name == 'meem' %}MEEM
+                        {% elif test_name == 'clock_drawing' %}Clock Drawing
+                        {% endif %}
+                    </h4>
+                    <div style="margin: 1rem 0;">
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                            <span>Total:</span>
+                            <strong>{{ stats.count }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                            <span>Z-Score Médio:</span>
+                            <strong class="z-score-value" data-score="{{ stats.avg_z_score }}">
+                                {{ stats.avg_z_score }}
+                            </strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0; font-size: 0.8rem;">
+                            <span>Abaixo Normal:</span>
+                            <span style="color: #dc3545;">{{ stats.below_normal }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0; font-size: 0.8rem;">
+                            <span>Normal:</span>
+                            <span style="color: #28a745;">{{ stats.normal }}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 0.5rem 0; font-size: 0.8rem;">
+                            <span>Acima Normal:</span>
+                            <span style="color: #007bff;">{{ stats.above_normal }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Performance por Teste -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-chart-area"></i>
+                Evolução por Tipo de Teste
+            </h2>
+        </div>
+        <div class="section-content">
+            <div class="chart-container">
+                <canvas id="testPerformanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dados para JavaScript -->
+<div id="dashboard-data" style="display: none;">
+    <script type="application/json" id="timeline-data">{{ timeline_data|safe }}</script>
+    <script type="application/json" id="timeline-labels">{{ timeline_labels|safe }}</script>
+    <script type="application/json" id="test-performance-data">{{ test_performance_data|safe }}</script>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregando dados do template
+    const timelineData = JSON.parse(document.getElementById('timeline-data').textContent);
+    const timelineLabels = JSON.parse(document.getElementById('timeline-labels').textContent);
+    const testPerformanceData = JSON.parse(document.getElementById('test-performance-data').textContent);
+    
+    console.log('Dashboard carregando...');
+    console.log('Timeline data:', timelineData);
+    console.log('Timeline labels:', timelineLabels);
+    
+    // Gráfico de Evolução Temporal
+    const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
+    new Chart(evolutionCtx, {
+        type: 'line',
+        data: {
+            labels: timelineLabels,
+            datasets: [{
+                label: 'Z-Score Médio',
+                data: timelineData,
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#3498db',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Z-Score Médio'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Período (Últimas 12 semanas)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3498db',
+                    borderWidth: 1
+                }
+            }
+        }
+    });
+
+    // Gráfico de Performance por Teste
+    const testPerformanceCtx = document.getElementById('testPerformanceChart').getContext('2d');
+    
+    new Chart(testPerformanceCtx, {
+        type: 'line',
+        data: {
+            labels: testPerformanceData.digit_span.labels,
+            datasets: [
+                {
+                    label: 'Digit Span',
+                    data: testPerformanceData.digit_span.data,
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'TMT-A',
+                    data: testPerformanceData.tmt_a.data,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'TMT-B',
+                    data: testPerformanceData.tmt_b.data,
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Stroop',
+                    data: testPerformanceData.stroop.data,
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'MEEM',
+                    data: testPerformanceData.meem.data,
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                },
+                {
+                    label: 'Clock Drawing',
+                    data: testPerformanceData.clock_drawing.data,
+                    borderColor: '#e67e22',
+                    backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Z-Score Médio'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Período (Últimas 12 semanas)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3498db',
+                    borderWidth: 1
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
