@@ -16,7 +16,11 @@
 
 ---
 
-O **AvivaMente** é uma plataforma digital completa para avaliações neuropsicológicas em ambiente clínico, otimizada para tablets e desenvolvida com foco na precisão diagnóstica. O sistema oferece uma bateria validada de testes cognitivos com dados normativos específicos para a população brasileira, permitindo análises estatísticas avançadas e relatórios clínicos automatizados.
+O AvivaMente foi desenvolvido com um propósito central: 
+
+proteger a saúde cerebral e a dignidade do paciente idoso durante a vulnerabilidade de uma hospitalização. Atualmente, quadros de declínio cognitivo agudo, como o delirium, são subdiagnosticados em até 75% dos casos, levando a consequências graves como quedas, prolongamento da internação e declínio funcional permanente (SILVA et al., 2011). Para combater este problema, a plataforma capacita as equipes de enfermagem com uma ferramenta de 
+
+detecção precoce, permitindo que tomem decisões clínicas rápidas e assertivas. Para alcançar isso, digitalizamos e otimizamos os processos de avaliação neuropsicológica, reduzindo em até 60% o tempo gasto com a aplicação e o scoring manual de testes. Ao oferecer uma interface intuitiva em tablets com dados normativos validados para a população brasileira, o AvivaMente transforma o rastreio cognitivo em uma prática ágil e precisa, garantindo que o cuidado certo chegue ao paciente certo, no momento certo.
 
 O sistema é projetado especificamente para atender às necessidades de:
 
