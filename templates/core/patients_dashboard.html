@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard de Pacientes - AvivaMente{% endblock %}
 
@@ -32,12 +33,12 @@
 }
 
 .page-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: #ffffff;
+    color: rgb(8, 2, 2);
     padding: 2rem;
-    border-radius: 12px;
+    border-radius: 8px;
     margin-bottom: 2rem;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border: 1px solid #e9ecef;
 }
 
 .page-title {
@@ -65,16 +66,15 @@
 .stat-card {
     background: white;
     padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
     border: 1px solid #e9ecef;
     text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.2s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+    border-color: #3498db;
 }
 
 .stat-number {
@@ -93,8 +93,7 @@
 
 .section-card {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-radius: 8px;
     border: 1px solid #e9ecef;
     margin-bottom: 2rem;
     overflow: hidden;
@@ -105,8 +104,36 @@
     padding: 1.5rem;
     border-bottom: 1px solid #e9ecef;
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     align-items: center;
+}
+
+.chart-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-controls label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.chart-controls select {
+    padding: 0.4rem 0.8rem;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: white;
+    min-width: 140px;
+    transition: border-color 0.3s ease;
+}
+
+.chart-controls select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
 }
 
 .section-title {
@@ -206,10 +233,9 @@
 .filter-section {
     background: white;
     padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 2rem;
+    border-radius: 8px;
     border: 1px solid #e9ecef;
+    margin-bottom: 2rem;
 }
 
 .filter-group {
@@ -240,7 +266,6 @@
 .filter-group select:focus {
     outline: none;
     border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .alert-section {
@@ -346,6 +371,23 @@
     
     .section-content {
         padding: 1rem;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+    
+    .chart-controls select {
+        min-width: 120px;
+        font-size: 0.8rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
     }
     
     .alert-section {
@@ -477,6 +519,15 @@
                 <i class="fas fa-chart-line"></i>
                 Evolução Temporal dos Z-Scores
             </h2>
+            <div class="chart-controls">
+                <label for="evolutionScale">Escala:</label>
+                <select id="evolutionScale" onchange="updateEvolutionScale()">
+                    <option value="full">Completa (-3 a +3)</option>
+                    <option value="normal">Normal (-2 a +2)</option>
+                    <option value="focus">Foco (-1.5 a +1.5)</option>
+                    <option value="auto">Automática</option>
+                </select>
+            </div>
         </div>
         <div class="section-content">
             <div class="chart-container">
@@ -548,13 +599,13 @@
         <div class="section-content">
             <div class="stats-grid">
                 {% for test_name, stats in test_stats.items %}
-                <div class="stat-card">
+                <div class="stat-card test-stat-card">
                     <h4>
-                        {% if test_name == 'digit_span' %}Digit Span
-                        {% elif test_name == 'tmt' %}TMT
-                        {% elif test_name == 'stroop' %}Stroop
-                        {% elif test_name == 'meem' %}MEEM
-                        {% elif test_name == 'clock_drawing' %}Clock Drawing
+                        {% if test_name == 'digit_span' %}Digit Span (Performance)
+                        {% elif test_name == 'tmt' %}TMT (Tempo)
+                        {% elif test_name == 'stroop' %}Stroop (Tempo)
+                        {% elif test_name == 'meem' %}MEEM (Performance)
+                        {% elif test_name == 'clock_drawing' %}Clock Drawing (Performance)
                         {% endif %}
                     </h4>
                     <div style="margin: 1rem 0;">
@@ -564,7 +615,7 @@
                         </div>
                         <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
                             <span>Z-Score Médio:</span>
-                            <strong class="z-score-value" data-score="{{ stats.avg_z_score }}">
+                            <strong class="z-score-value" data-score="{{ stats.avg_z_score }}" data-avg-score="{{ stats.avg_z_score }}">
                                 {{ stats.avg_z_score }}
                             </strong>
                         </div>
@@ -594,6 +645,15 @@
                 <i class="fas fa-chart-area"></i>
                 Evolução por Tipo de Teste
             </h2>
+            <div class="chart-controls">
+                <label for="testPerformanceScale">Escala:</label>
+                <select id="testPerformanceScale" onchange="updateTestPerformanceScale()">
+                    <option value="full">Completa (-3 a +3)</option>
+                    <option value="normal">Normal (-2 a +2)</option>
+                    <option value="focus">Foco (-1.5 a +1.5)</option>
+                    <option value="auto">Automática</option>
+                </select>
+            </div>
         </div>
         <div class="section-content">
             <div class="chart-container">
@@ -611,7 +671,12 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/zscore-utils.js' %}"></script>
 <script>
+// Variáveis globais para armazenar os gráficos
+let evolutionChart;
+let testPerformanceChart;
+
 document.addEventListener('DOMContentLoaded', function() {
     // Carregando dados do template
     const timelineData = JSON.parse(document.getElementById('timeline-data').textContent);
@@ -622,21 +687,33 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Timeline data:', timelineData);
     console.log('Timeline labels:', timelineLabels);
     
-    // Gráfico de Evolução Temporal
+    // Aplicar cores dos Z-scores
+    ZScoreUtils.applyColors();
+    
+    // Gráfico de Evolução Temporal - CORRIGIDO
     const evolutionCtx = document.getElementById('evolutionChart').getContext('2d');
-    new Chart(evolutionCtx, {
+    evolutionChart = new Chart(evolutionCtx, {
         type: 'line',
         data: {
             labels: timelineLabels,
             datasets: [{
                 label: 'Z-Score Médio',
                 data: timelineData,
-                borderColor: '#3498db',
-                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderColor: function(context) {
+                    // Cor dinâmica baseada no valor médio
+                    const avgValue = timelineData.reduce((a, b) => a + b, 0) / timelineData.length;
+                    return ZScoreUtils.getColor(avgValue);
+                },
+                backgroundColor: function(context) {
+                    const avgValue = timelineData.reduce((a, b) => a + b, 0) / timelineData.length;
+                    return ZScoreUtils.getColor(avgValue) + '20';
+                },
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
-                pointBackgroundColor: '#3498db',
+                pointBackgroundColor: function(context) {
+                    return ZScoreUtils.getColor(context.parsed.y);
+                },
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 2,
                 pointRadius: 6
@@ -648,8 +725,31 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: false,
+                    min: -3,
+                    max: 3,
+                    ticks: {
+                        stepSize: 0.5,
+                        callback: function(value) {
+                            return value.toFixed(1);
+                        }
+                    },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)'
+                        color: function(context) {
+                            // Linha zero em destaque
+                            if (Math.abs(context.tick.value) < 0.1) {
+                                return '#000000';
+                            }
+                            // Linhas críticas em cinza mais suave
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) {
+                                return 'rgba(0,0,0,0.2)';
+                            }
+                            return 'rgba(0,0,0,0.1)';
+                        },
+                        lineWidth: function(context) {
+                            if (Math.abs(context.tick.value) < 0.1) return 2;
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) return 1.5;
+                            return 1;
+                        }
                     },
                     title: {
                         display: true,
@@ -662,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     title: {
                         display: true,
-                        text: 'Período (Últimas 12 semanas)'
+                        text: 'Período (Últimas 30 dias)'
                     }
                 }
             },
@@ -678,22 +778,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: '#3498db',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const zScore = context.parsed.y;
+                            const label = ZScoreUtils.getLabel(zScore);
+                            const percentile = ZScoreUtils.getPercentile(zScore);
+                            return [
+                                `Classificação: ${label}`,
+                                `Percentil: ${percentile}%`
+                            ];
+                        }
+                    }
                 }
             }
         }
     });
 
-    // Gráfico de Performance por Teste
+    // Gráfico de Performance por Teste - CORRIGIDO
     const testPerformanceCtx = document.getElementById('testPerformanceChart').getContext('2d');
     
-    new Chart(testPerformanceCtx, {
+    testPerformanceChart = new Chart(testPerformanceCtx, {
         type: 'line',
         data: {
             labels: testPerformanceData.digit_span.labels,
             datasets: [
                 {
-                    label: 'Digit Span',
+                    label: 'Digit Span (Performance)',
                     data: testPerformanceData.digit_span.data,
                     borderColor: '#3498db',
                     backgroundColor: 'rgba(52, 152, 219, 0.1)',
@@ -702,34 +813,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.4
                 },
                 {
-                    label: 'TMT-A',
+                    label: 'TMT-A (Tempo)',
                     data: testPerformanceData.tmt_a.data,
                     borderColor: '#e74c3c',
                     backgroundColor: 'rgba(231, 76, 60, 0.1)',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4
+                    tension: 0.4,
+                    borderDash: [5, 5] // Linha tracejada para testes de tempo
                 },
                 {
-                    label: 'TMT-B',
+                    label: 'TMT-B (Tempo)',
                     data: testPerformanceData.tmt_b.data,
                     borderColor: '#f39c12',
                     backgroundColor: 'rgba(243, 156, 18, 0.1)',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4
+                    tension: 0.4,
+                    borderDash: [5, 5] // Linha tracejada para testes de tempo
                 },
                 {
-                    label: 'Stroop',
+                    label: 'Stroop (Tempo)',
                     data: testPerformanceData.stroop.data,
                     borderColor: '#9b59b6',
                     backgroundColor: 'rgba(155, 89, 182, 0.1)',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0.4
+                    tension: 0.4,
+                    borderDash: [5, 5] // Linha tracejada para testes de tempo
                 },
                 {
-                    label: 'MEEM',
+                    label: 'MEEM (Performance)',
                     data: testPerformanceData.meem.data,
                     borderColor: '#2ecc71',
                     backgroundColor: 'rgba(46, 204, 113, 0.1)',
@@ -738,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.4
                 },
                 {
-                    label: 'Clock Drawing',
+                    label: 'Clock Drawing (Performance)',
                     data: testPerformanceData.clock_drawing.data,
                     borderColor: '#e67e22',
                     backgroundColor: 'rgba(230, 126, 34, 0.1)',
@@ -754,12 +868,35 @@ document.addEventListener('DOMContentLoaded', function() {
             scales: {
                 y: {
                     beginAtZero: false,
+                    min: -3,
+                    max: 3,
+                    ticks: {
+                        stepSize: 0.5,
+                        callback: function(value) {
+                            return value.toFixed(1);
+                        }
+                    },
                     grid: {
-                        color: 'rgba(0,0,0,0.1)'
+                        color: function(context) {
+                            // Linha zero em destaque
+                            if (Math.abs(context.tick.value) < 0.1) {
+                                return '#000000';
+                            }
+                            // Linhas críticas em cinza mais suave
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) {
+                                return 'rgba(0,0,0,0.2)';
+                            }
+                            return 'rgba(0,0,0,0.1)';
+                        },
+                        lineWidth: function(context) {
+                            if (Math.abs(context.tick.value) < 0.1) return 2;
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) return 1.5;
+                            return 1;
+                        }
                     },
                     title: {
                         display: true,
-                        text: 'Z-Score Médio'
+                        text: 'Z-Score Normalizado'
                     }
                 },
                 x: {
@@ -768,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     title: {
                         display: true,
-                        text: 'Período (Últimas 12 semanas)'
+                        text: 'Período (Últimos 30 dias)'
                     }
                 }
             },
@@ -784,7 +921,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: '#3498db',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const isTimeTest = context.dataset.label.includes('(Tempo)');
+                            const performance = isTimeTest ? 
+                                '(valores negativos = melhor desempenho)' : 
+                                '(valores positivos = melhor desempenho)';
+                            return `${context.dataset.label}: ${value.toFixed(2)} ${performance}`;
+                        },
+                        afterLabel: function(context) {
+                            const zScore = context.parsed.y;
+                            const label = ZScoreUtils.getLabel(zScore);
+                            const percentile = ZScoreUtils.getPercentile(zScore);
+                            return [
+                                `Classificação: ${label}`,
+                                `Percentil: ${percentile}%`
+                            ];
+                        }
+                    }
                 }
             },
             interaction: {
@@ -794,5 +950,83 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Função para atualizar a escala do gráfico de evolução
+function updateEvolutionScale() {
+    if (!evolutionChart) return;
+    
+    const scaleType = document.getElementById('evolutionScale').value;
+    let minVal, maxVal;
+    
+    switch(scaleType) {
+        case 'normal':
+            minVal = -2;
+            maxVal = 2;
+            break;
+        case 'focus':
+            minVal = -1.5;
+            maxVal = 1.5;
+            break;
+        case 'auto':
+            // Calcular baseado nos dados
+            const allValues = evolutionChart.data.datasets[0].data;
+            const dataMin = Math.min(...allValues);
+            const dataMax = Math.max(...allValues);
+            const padding = (dataMax - dataMin) * 0.1;
+            minVal = Math.max(-3, dataMin - padding);
+            maxVal = Math.min(3, dataMax + padding);
+            break;
+        default: // 'full'
+            minVal = -3;
+            maxVal = 3;
+    }
+    
+    evolutionChart.options.scales.y.min = minVal;
+    evolutionChart.options.scales.y.max = maxVal;
+    evolutionChart.update();
+}
+
+// Função para atualizar a escala do gráfico de performance por teste
+function updateTestPerformanceScale() {
+    if (!testPerformanceChart) return;
+    
+    const scaleType = document.getElementById('testPerformanceScale').value;
+    let minVal, maxVal;
+    
+    switch(scaleType) {
+        case 'normal':
+            minVal = -2;
+            maxVal = 2;
+            break;
+        case 'focus':
+            minVal = -1.5;
+            maxVal = 1.5;
+            break;
+        case 'auto':
+            // Calcular baseado nos dados
+            let allValues = [];
+            testPerformanceChart.data.datasets.forEach(dataset => {
+                allValues = allValues.concat(dataset.data.filter(val => val !== null && val !== undefined));
+            });
+            if (allValues.length > 0) {
+                const dataMin = Math.min(...allValues);
+                const dataMax = Math.max(...allValues);
+                const padding = (dataMax - dataMin) * 0.1;
+                minVal = Math.max(-3, dataMin - padding);
+                maxVal = Math.min(3, dataMax + padding);
+            } else {
+                minVal = -3;
+                maxVal = 3;
+            }
+            break;
+        default: // 'full'
+            minVal = -3;
+            maxVal = 3;
+    }
+    
+    testPerformanceChart.options.scales.y.min = minVal;
+    testPerformanceChart.options.scales.y.max = maxVal;
+    testPerformanceChart.update();
+}
 </script>
 {% endblock %}

@@ -11,6 +11,7 @@ class Assessment(models.Model):
     ]
     
     RISK_SCORE_CHOICES = [
+        ('MINIMAL', 'Mínimo'),
         ('LOW', 'Baixo'),
         ('MODERATE', 'Moderado'),
         ('HIGH', 'Alto'),
@@ -44,6 +45,26 @@ class Assessment(models.Model):
         blank=True,
         null=True,
         verbose_name='Pontuação Final de Risco'
+    )
+    
+    # Campos aprimorados para sistema de Z-Score ponderado
+    final_z_score = models.FloatField(
+        blank=True,
+        null=True,
+        verbose_name='Z-Score Final Ponderado',
+        help_text='Z-Score final calculado com sistema de pesos por domínio cognitivo'
+    )
+    
+    total_tests_completed = models.IntegerField(
+        default=0,
+        verbose_name='Total de Testes Completados',
+        help_text='Número de testes neuropsicológicos completados nesta avaliação'
+    )
+    
+    confidence_level = models.FloatField(
+        default=0.0,
+        verbose_name='Nível de Confiança (%)',
+        help_text='Nível de confiança da avaliação baseado no número de testes completados'
     )
     
     created_at = models.DateTimeField(auto_now_add=True)

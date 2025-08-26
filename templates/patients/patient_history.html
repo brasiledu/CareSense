@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Histórico - {{ patient.full_name }} - CareSense{% endblock %}
 
@@ -506,6 +507,7 @@
 
 <!-- Scripts para gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/zscore-utils.js' %}"></script>
 
 {% if evolution_data and evolution_data.dates %}
 <!-- Dados para JavaScript -->
@@ -537,7 +539,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Configuração comum dos gráficos
+        // Aplicar cores dos Z-scores
+        if (window.ZScoreUtils) {
+            ZScoreUtils.applyColors();
+        }
+        
+        // Configuração comum dos gráficos - APRIMORADA
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
@@ -552,11 +559,44 @@ document.addEventListener('DOMContentLoaded', function() {
                         display: true,
                         text: 'Data da Avaliação'
                     }
+                },
+                y: {
+                    beginAtZero: false,
+                    min: -3,
+                    max: 3,
+                    ticks: {
+                        stepSize: 0.5,
+                        callback: function(value) {
+                            return value.toFixed(1);
+                        }
+                    },
+                    grid: {
+                        color: function(context) {
+                            // Linha zero em destaque
+                            if (Math.abs(context.tick.value) < 0.1) {
+                                return '#000000';
+                            }
+                            // Linhas críticas
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) {
+                                return '#ff6b6b';
+                            }
+                            return 'rgba(0,0,0,0.1)';
+                        },
+                        lineWidth: function(context) {
+                            if (Math.abs(context.tick.value) < 0.1) return 2;
+                            if ([-2.5, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.5].includes(context.tick.value)) return 1.5;
+                            return 1;
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Z-Score'
+                    }
                 }
             }
         };
         
-        // Gráfico de Z-Scores
+        // Gráfico de Z-Scores com configurações aprimoradas
         const zScoreCtx = document.getElementById('zScoreChart');
         if (zScoreCtx) {
             try {
@@ -568,45 +608,74 @@ document.addEventListener('DOMContentLoaded', function() {
                             {
                                 label: 'Digit Span Z-Score',
                                 data: evolutionData.digit_span_z_scores || [],
-                                borderColor: '#3498db',
+                                borderColor: ZScoreUtils ? ZScoreUtils.getTestColor('digit_span') : '#3498db',
                                 backgroundColor: 'rgba(52, 152, 219, 0.1)',
                                 tension: 0.2,
-                                spanGaps: true
+                                spanGaps: true,
+                                fill: false
                             },
                             {
-                                label: 'TMT-A Z-Score',
+                                label: 'TMT-A Z-Score (Tempo)',
                                 data: evolutionData.tmt_a_z_scores || [],
-                                borderColor: '#e74c3c',
+                                borderColor: ZScoreUtils ? ZScoreUtils.getTestColor('tmt_a') : '#e74c3c',
                                 backgroundColor: 'rgba(231, 76, 60, 0.1)',
                                 tension: 0.2,
-                                spanGaps: true
+                                spanGaps: true,
+                                fill: false,
+                                borderDash: [5, 5]
                             },
                             {
-                                label: 'TMT-B Z-Score',
+                                label: 'TMT-B Z-Score (Tempo)',
                                 data: evolutionData.tmt_b_z_scores || [],
-                                borderColor: '#f39c12',
+                                borderColor: ZScoreUtils ? ZScoreUtils.getTestColor('tmt_b') : '#f39c12',
                                 backgroundColor: 'rgba(243, 156, 18, 0.1)',
                                 tension: 0.2,
-                                spanGaps: true
+                                spanGaps: true,
+                                fill: false,
+                                borderDash: [5, 5]
                             },
                             {
                                 label: 'Stroop Z-Score',
                                 data: evolutionData.stroop_z_scores || [],
-                                borderColor: '#27ae60',
+                                borderColor: ZScoreUtils ? ZScoreUtils.getTestColor('stroop') : '#27ae60',
                                 backgroundColor: 'rgba(39, 174, 96, 0.1)',
                                 tension: 0.2,
-                                spanGaps: true
+                                spanGaps: true,
+                                fill: false
                             }
                         ]
                     },
                     options: {
                         ...commonOptions,
+                        plugins: {
+                            ...commonOptions.plugins,
+                            tooltip: {
+                                ...commonOptions.plugins.tooltip,
+                                callbacks: {
+                                    ...commonOptions.plugins.tooltip.callbacks,
+                                    afterLabel: function(context) {
+                                        if (!ZScoreUtils) return '';
+                                        const zScore = context.parsed.y;
+                                        const label = ZScoreUtils.getLabel(zScore);
+                                        const percentile = ZScoreUtils.getPercentile(zScore);
+                                        const testType = context.dataset.label.includes('Tempo') ? 'Teste de Tempo' : 'Teste de Performance';
+                                        return [`Classificação: ${label}`, `Percentil: ${percentile}%`, `Tipo: ${testType}`];
+                                    }
+                                }
+                            }
+                        },
                         scales: {
-                            ...commonOptions.scales,
+                            x: commonOptions.scales.x,
                             y: {
+                                beginAtZero: false,
+                                min: -3,
+                                max: 3,
                                 title: {
                                     display: true,
                                     text: 'Z-Score'
+                                },
+                                ticks: {
+                                    stepSize: 0.5
                                 },
                                 grid: {
                                     color: function(context) {

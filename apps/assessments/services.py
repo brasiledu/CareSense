@@ -132,6 +132,45 @@ class AssessmentScoreCalculator:
             return 0
         return (raw_score - mean) / standard_deviation
     
+    def normalize_z_score_for_deficit(self, z_score, test_type):
+        """
+        Normaliza Z-scores para que valores negativos sempre indiquem déficit,
+        independentemente do tipo de teste.
+        
+        Args:
+            z_score: Z-score bruto calculado
+            test_type: Tipo do teste ('performance' ou 'time')
+                      - 'performance': maior pontuação = melhor (Digit Span, MEEM, Clock Drawing)
+                      - 'time': menor tempo = melhor (TMT, Stroop)
+        
+        Returns:
+            Z-score normalizado onde valores negativos = déficit
+        """
+        if test_type == 'performance':
+            # Para testes de performance: Z-score já está correto
+            # Valores negativos = performance abaixo da média = déficit
+            return z_score
+        elif test_type == 'time':
+            # Para testes de tempo: inverter o sinal se positivo
+            # Z-score positivo = tempo maior que média = pior performance = déficit
+            return -abs(z_score) if z_score > 0 else z_score
+        else:
+            raise ValueError(f"Tipo de teste inválido: {test_type}")
+    
+    def get_test_type(self, test_name):
+        """
+        Retorna o tipo de teste para normalização correta
+        """
+        performance_tests = ['digit_span', 'meem', 'clock_drawing']
+        time_tests = ['tmt_a', 'tmt_b', 'stroop']
+        
+        if test_name in performance_tests:
+            return 'performance'
+        elif test_name in time_tests:
+            return 'time'
+        else:
+            raise ValueError(f"Teste não reconhecido: {test_name}")
+
     def calculate_tmt_z_scores(self, patient, time_a, time_b, errors_a=0, errors_b=0):
         """
         Calcula os Z-Scores para TMT-A e TMT-B
@@ -237,23 +276,30 @@ class AssessmentScoreCalculator:
     
     def calculate_final_risk_score(self, assessment_id):
         """
-        Calcula a pontuação final de risco baseada nos Z-Scores dos três testes
+        Calcula a pontuação final de risco baseada nos Z-Scores dos testes com sistema de pesos
+        RF05 - Motor de Pontuação Aprimorado
         """
         try:
             assessment = Assessment.objects.get(id=assessment_id)
             patient = assessment.patient
             
-            z_scores = []
+            # Sistema de pontuação com pesos e normalização
+            test_scores = {}
+            total_weight = 0
             
-            # Coleta Z-Scores dos testes completados
+            # Digit Span - Peso: 1.5 (memória de trabalho fundamental)
             if hasattr(assessment, 'digit_span_result'):
                 digit_result = assessment.digit_span_result
                 total_score = digit_result.total_score
                 z_score = self.calculate_digit_span_z_score(patient, total_score)
                 digit_result.z_score = z_score
                 digit_result.save()
-                z_scores.append(z_score)
+                # Normalizar para déficit (valores negativos = pior)
+                normalized_score = z_score  # Já correto (maior pontuação = melhor)
+                test_scores['digit_span'] = {'score': normalized_score, 'weight': 1.5}
+                total_weight += 1.5
             
+            # TMT - Peso: 2.0 (função executiva central)
             if hasattr(assessment, 'tmt_result'):
                 tmt_result = assessment.tmt_result
                 z_score_a, z_score_b = self.calculate_tmt_z_scores(
@@ -266,52 +312,81 @@ class AssessmentScoreCalculator:
                 tmt_result.z_score_a = z_score_a
                 tmt_result.z_score_b = z_score_b
                 tmt_result.save()
-                z_scores.extend([z_score_a, z_score_b])
+                # Normalizar para déficit (inverter sinais - maior tempo = pior = z negativo)
+                normalized_a = -abs(z_score_a) if z_score_a > 0 else z_score_a
+                normalized_b = -abs(z_score_b) if z_score_b > 0 else z_score_b
+                # Média ponderada TMT-A e TMT-B (TMT-B tem mais peso)
+                tmt_composite = (normalized_a * 0.4 + normalized_b * 0.6)
+                test_scores['tmt'] = {'score': tmt_composite, 'weight': 2.0}
+                total_weight += 2.0
             
+            # Stroop - Peso: 1.8 (controle inibitório)
             if hasattr(assessment, 'stroop_result'):
                 stroop_result = assessment.stroop_result
-                # Calcula tempo de interferência (Card 3 é o de interferência)
                 interference_time = stroop_result.interference_time
                 z_score = self.calculate_stroop_z_score(patient, interference_time)
                 stroop_result.z_score = z_score
                 stroop_result.save()
-                z_scores.append(z_score)
+                # Normalizar para déficit (inverter sinal - maior tempo = pior = z negativo)
+                normalized_score = -abs(z_score) if z_score > 0 else z_score
+                test_scores['stroop'] = {'score': normalized_score, 'weight': 1.8}
+                total_weight += 1.8
             
-            # Adicionar MEEM se disponível
+            # MEEM - Peso: 2.5 (estado cognitivo global)
             if hasattr(assessment, 'meem_result'):
                 meem_result = assessment.meem_result
                 total_score = meem_result.total_score
                 z_score = self.calculate_meem_z_score(patient, total_score)
                 meem_result.z_score = z_score
                 meem_result.save()
-                z_scores.append(z_score)
+                # Normalizar para déficit (valores negativos = pior)
+                normalized_score = z_score  # Já correto (maior pontuação = melhor)
+                test_scores['meem'] = {'score': normalized_score, 'weight': 2.5}
+                total_weight += 2.5
             
-            # Adicionar Clock Drawing Test se disponível
+            # Clock Drawing - Peso: 1.2 (função visuoespacial)
             if hasattr(assessment, 'clock_drawing_result'):
                 clock_result = assessment.clock_drawing_result
                 total_score = clock_result.total_score
                 z_score = self.calculate_clock_drawing_z_score(patient, total_score)
                 clock_result.z_score = z_score
                 clock_result.save()
-                z_scores.append(z_score)
+                # Normalizar para déficit (valores negativos = pior)
+                normalized_score = z_score  # Já correto (maior pontuação = melhor)
+                test_scores['clock_drawing'] = {'score': normalized_score, 'weight': 1.2}
+                total_weight += 1.2
             
-            # Determina o risco final baseado na média dos Z-Scores
-            if z_scores:
-                avg_z_score = sum(z_scores) / len(z_scores)
+            # Calcular Z-Score final ponderado
+            if test_scores and total_weight > 0:
+                weighted_sum = sum(test['score'] * test['weight'] for test in test_scores.values())
+                final_z_score = weighted_sum / total_weight
                 
-                if avg_z_score <= -2.0:
-                    risk_score = 'CRITICAL'
-                elif avg_z_score <= -1.5:
-                    risk_score = 'HIGH'
-                elif avg_z_score <= -1.0:
-                    risk_score = 'MODERATE'
+                # Sistema de classificação aprimorado baseado em evidências clínicas
+                # Critérios mais rigorosos para Z-scores normalizados
+                if final_z_score <= -2.5:
+                    risk_score = 'CRITICAL'  # Déficit severo (< 1º percentil)
+                elif final_z_score <= -1.5:
+                    risk_score = 'HIGH'      # Déficit moderado (< 7º percentil)
+                elif final_z_score <= -1.0:
+                    risk_score = 'MODERATE'  # Déficit leve (< 16º percentil)
+                elif final_z_score <= -0.5:
+                    risk_score = 'LOW'       # Limítrofe (< 31º percentil)
                 else:
-                    risk_score = 'LOW'
+                    risk_score = 'MINIMAL'   # Normal (≥ 31º percentil)
                 
+                # Salvar dados adicionais para análise
+                assessment.final_z_score = round(final_z_score, 3)
+                assessment.total_tests_completed = len(test_scores)
+                assessment.confidence_level = min(100, (len(test_scores) / 5) * 100)
                 assessment.final_risk_score = risk_score
                 assessment.mark_completed()
                 
-                return risk_score
+                return {
+                    'risk_score': risk_score,
+                    'final_z_score': final_z_score,
+                    'test_scores': test_scores,
+                    'confidence': min(100, (len(test_scores) / 5) * 100)  # Confiança baseada em testes completados
+                }
             
             return None
             
@@ -324,9 +399,12 @@ score_calculator = AssessmentScoreCalculator()
 def calculate_final_risk(assessment_id):
     """
     Função de conveniência para calcular o risco final
-    RF05 - Motor de Pontuação
+    RF05 - Motor de Pontuação Aprimorado
     """
-    return score_calculator.calculate_final_risk_score(assessment_id)
+    result = score_calculator.calculate_final_risk_score(assessment_id)
+    if result and isinstance(result, dict):
+        return result['risk_score']
+    return result
 
 def calculate_tmt_z_score(patient, time_seconds, errors):
     """

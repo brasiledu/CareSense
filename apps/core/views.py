@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from datetime import datetime, timedelta
 import json
+from apps.core.z_score_utils import normalize_assessment_z_scores, calculate_composite_z_score
 from apps.patients.models import Patient
 from apps.assessments.models import Assessment, DigitSpanResult, TMTResult, StroopResult, MeemResult, ClockDrawingResult
 from apps.assessments.services import score_calculator
@@ -699,40 +700,13 @@ def patients_dashboard(request):
         first_z_scores = []
         last_z_scores = []
         
-        # Coletar Z-scores do primeiro teste
-        if hasattr(first_assessment, 'digit_span_result') and first_assessment.digit_span_result.z_score:
-            first_z_scores.append(first_assessment.digit_span_result.z_score)
-        if hasattr(first_assessment, 'tmt_result'):
-            if first_assessment.tmt_result.z_score_a:
-                first_z_scores.append(-first_assessment.tmt_result.z_score_a)  # Inverter para TMT
-            if first_assessment.tmt_result.z_score_b:
-                first_z_scores.append(-first_assessment.tmt_result.z_score_b)
-        if hasattr(first_assessment, 'stroop_result') and first_assessment.stroop_result.z_score:
-            first_z_scores.append(-first_assessment.stroop_result.z_score)  # Inverter para Stroop
-        if hasattr(first_assessment, 'meem_result') and first_assessment.meem_result.z_score:
-            first_z_scores.append(first_assessment.meem_result.z_score)
-        if hasattr(first_assessment, 'clock_drawing_result') and first_assessment.clock_drawing_result.z_score:
-            first_z_scores.append(first_assessment.clock_drawing_result.z_score)
+        # Calcular médias usando funções utilitárias
+        first_normalized = normalize_assessment_z_scores(first_assessment)
+        last_normalized = normalize_assessment_z_scores(last_assessment)
         
-        # Coletar Z-scores do último teste
-        if hasattr(last_assessment, 'digit_span_result') and last_assessment.digit_span_result.z_score:
-            last_z_scores.append(last_assessment.digit_span_result.z_score)
-        if hasattr(last_assessment, 'tmt_result'):
-            if last_assessment.tmt_result.z_score_a:
-                last_z_scores.append(-last_assessment.tmt_result.z_score_a)
-            if last_assessment.tmt_result.z_score_b:
-                last_z_scores.append(-last_assessment.tmt_result.z_score_b)
-        if hasattr(last_assessment, 'stroop_result') and last_assessment.stroop_result.z_score:
-            last_z_scores.append(-last_assessment.stroop_result.z_score)
-        if hasattr(last_assessment, 'meem_result') and last_assessment.meem_result.z_score:
-            last_z_scores.append(last_assessment.meem_result.z_score)
-        if hasattr(last_assessment, 'clock_drawing_result') and last_assessment.clock_drawing_result.z_score:
-            last_z_scores.append(last_assessment.clock_drawing_result.z_score)
-            last_z_scores.append(-last_assessment.stroop_result.z_score)
-        
-        if first_z_scores and last_z_scores:
-            first_avg = sum(first_z_scores) / len(first_z_scores)
-            last_avg = sum(last_z_scores) / len(last_z_scores)
+        if first_normalized and last_normalized:
+            first_avg = calculate_composite_z_score(first_normalized)
+            last_avg = calculate_composite_z_score(last_normalized)
             improvement = last_avg - first_avg
             
             # Determinar tendência
@@ -807,40 +781,13 @@ def patients_dashboard(request):
         }
         
         for assessment in day_assessments:
-            # Digit Span
-            if hasattr(assessment, 'digit_span_result') and assessment.digit_span_result.z_score:
-                score = assessment.digit_span_result.z_score
-                day_z_scores.append(score)
-                day_test_scores['digit_span'].append(score)
+            # Usar função utilitária para normalização consistente
+            normalized_scores = normalize_assessment_z_scores(assessment)
             
-            # TMT
-            if hasattr(assessment, 'tmt_result'):
-                if assessment.tmt_result.z_score_a:
-                    score_a = -assessment.tmt_result.z_score_a  # Inverter para TMT
-                    day_z_scores.append(score_a)
-                    day_test_scores['tmt_a'].append(score_a)
-                if assessment.tmt_result.z_score_b:
-                    score_b = -assessment.tmt_result.z_score_b
-                    day_z_scores.append(score_b)
-                    day_test_scores['tmt_b'].append(score_b)
-            
-            # Stroop
-            if hasattr(assessment, 'stroop_result') and assessment.stroop_result.z_score:
-                score = -assessment.stroop_result.z_score  # Inverter para Stroop
+            # Adicionar todos os scores normalizados
+            for test_name, score in normalized_scores.items():
                 day_z_scores.append(score)
-                day_test_scores['stroop'].append(score)
-            
-            # MEEM
-            if hasattr(assessment, 'meem_result') and assessment.meem_result.z_score:
-                score = assessment.meem_result.z_score
-                day_z_scores.append(score)
-                day_test_scores['meem'].append(score)
-            
-            # Clock Drawing
-            if hasattr(assessment, 'clock_drawing_result') and assessment.clock_drawing_result.z_score:
-                score = assessment.clock_drawing_result.z_score
-                day_z_scores.append(score)
-                day_test_scores['clock_drawing'].append(score)
+                day_test_scores[test_name].append(score)
         
         # Calcular médias
         if day_z_scores:
@@ -860,29 +807,32 @@ def patients_dashboard(request):
                 test_performance_data[test_name]['data'].insert(0, 0)
             test_performance_data[test_name]['labels'].insert(0, day_date.strftime('%d/%m'))
     
-    # Estatísticas por teste
+    # Estatísticas por teste - usando funções utilitárias para normalização consistente
+    from apps.core.z_score_utils import normalize_z_score_for_deficit, get_test_type
+    
     test_stats = {}
     completed_assessments = assessments_query.filter(status='COMPLETED')
     
     for test_name in ['digit_span', 'tmt', 'stroop', 'meem', 'clock_drawing']:
-        if test_name == 'digit_span':
-            test_results = [a.digit_span_result for a in completed_assessments if hasattr(a, 'digit_span_result')]
-            z_scores = [r.z_score for r in test_results if r.z_score is not None]
-        elif test_name == 'tmt':
-            test_results = [a.tmt_result for a in completed_assessments if hasattr(a, 'tmt_result')]
-            z_scores = []
-            for r in test_results:
-                if r.z_score_a: z_scores.append(-r.z_score_a)
-                if r.z_score_b: z_scores.append(-r.z_score_b)
-        elif test_name == 'stroop':
-            test_results = [a.stroop_result for a in completed_assessments if hasattr(a, 'stroop_result')]
-            z_scores = [-r.z_score for r in test_results if r.z_score is not None]
-        elif test_name == 'meem':
-            test_results = [a.meem_result for a in completed_assessments if hasattr(a, 'meem_result')]
-            z_scores = [r.z_score for r in test_results if r.z_score is not None]
-        elif test_name == 'clock_drawing':
-            test_results = [a.clock_drawing_result for a in completed_assessments if hasattr(a, 'clock_drawing_result')]
-            z_scores = [r.z_score for r in test_results if r.z_score is not None]
+        z_scores = []
+        
+        for assessment in completed_assessments:
+            # Usar função utilitária para obter Z-scores normalizados
+            normalized_scores = normalize_assessment_z_scores(assessment)
+            
+            if test_name == 'digit_span' and 'digit_span' in normalized_scores:
+                z_scores.append(normalized_scores['digit_span'])
+            elif test_name == 'tmt':
+                if 'tmt_a' in normalized_scores:
+                    z_scores.append(normalized_scores['tmt_a'])
+                if 'tmt_b' in normalized_scores:
+                    z_scores.append(normalized_scores['tmt_b'])
+            elif test_name == 'stroop' and 'stroop' in normalized_scores:
+                z_scores.append(normalized_scores['stroop'])
+            elif test_name == 'meem' and 'meem' in normalized_scores:
+                z_scores.append(normalized_scores['meem'])
+            elif test_name == 'clock_drawing' and 'clock_drawing' in normalized_scores:
+                z_scores.append(normalized_scores['clock_drawing'])
         
         if z_scores:
             test_stats[test_name] = {
