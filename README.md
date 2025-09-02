@@ -35,11 +35,20 @@ O sistema é projetado especificamente para atender às necessidades de:
 
 ```
 caresense-project/
-├── 📖 docs/              # Documentação técnica completa
-├── 🔧 scripts/           # Scripts utilitários e de setup
-│   ├── setup/           # Scripts de configuração
-│   └── tests/           # Scripts de teste standalone
-├── 🧪 tests/            # Testes automatizados organizados
+├── 🚀 deploy/           # Configurações de deploy
+│   ├── build.sh         # Script de build para Render
+│   ├── render.yaml      # Configuração declarativa
+│   └── runtime.txt      # Versão do Python
+├── 📖 docs/             # Documentação completa
+│   ├── deploy/          # Guias de deploy
+│   └── technical/       # Documentação técnica
+├── 📦 requirements/     # Dependências organizadas
+│   ├── requirements-dev.txt   # Desenvolvimento
+│   └── requirements-prod.txt  # Produção
+├── 🔧 scripts/          # Scripts utilitários
+│   ├── utils/           # Scripts gerais
+│   ├── setup/           # Configuração inicial
+│   └── maintenance/     # Manutenção
 ├── 💻 apps/             # Aplicações Django
 │   ├── assessments/     # Testes neuropsicológicos
 │   ├── patients/        # Gestão de pacientes
@@ -47,6 +56,7 @@ caresense-project/
 │   └── core/           # Funcionalidades centrais
 ├── 🎨 templates/        # Templates HTML responsivos
 ├── 📦 static/          # Arquivos estáticos (CSS, JS)
+├── 🧪 tests/           # Testes automatizados
 └── ⚙️ caresense_project/ # Configurações Django
 ```
 
@@ -285,7 +295,7 @@ python manage.py runserver
 - **Criar Superusuário**: `python manage.py createsuperuser`
 - **Admin Panel**: `http://127.0.0.1:8000/admin/`
 
-> 📝 **Nota**: Para configuração avançada e deploy em produção, consulte [DEPLOY.md](DEPLOY.md)
+> 📝 **Nota**: Para configuração avançada e deploy em produção, consulte [docs/deploy/DEPLOY_RENDER.md](docs/deploy/DEPLOY_RENDER.md)
 
 ## 📱 Como Usar
 
@@ -317,7 +327,7 @@ python manage.py runserver
 
 ### Guias Disponíveis
 
-- **[Guia de Instalação](DEPLOY.md)** - Configuração detalhada para produção
+- **[Guia de Deploy](docs/deploy/DEPLOY_RENDER.md)** - Deploy no Render passo a passo
 - **[Manual do Usuário](docs/manual-usuario.md)** - Como usar cada funcionalidade
 - **[Arquitetura do Sistema](docs/arquitetura.md)** - Visão técnica completa
 - **[Testes Neuropsicológicos](docs/testes-neuropsicologicos.md)** - Base científica dos testes

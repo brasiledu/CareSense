@@ -30,6 +30,11 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
 
+# Adicionar domínios do Render automaticamente
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 # CSRF Trusted Origins (sempre definido, usa env se existir)
 _csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS')
 if _csrf_trusted_origins_env:
@@ -40,6 +45,13 @@ else:
         'http://127.0.0.1',
         'http://0.0.0.0',
     ]
+
+# Adicionar domínio do Render ao CSRF_TRUSTED_ORIGINS
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.extend([
+        f'https://{RENDER_EXTERNAL_HOSTNAME}',
+        f'http://{RENDER_EXTERNAL_HOSTNAME}'
+    ])
 
 # Application definition
 
@@ -182,12 +194,14 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-    # Confiar no proxy para detectar HTTPS corretamente (quando houver)
+    # Confiar no proxy para detectar HTTPS corretamente
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    # Ajustes de HTTPS (ajuste via env conforme seu provedor)
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
+    
+    # Configurações HTTPS - podem ser habilitadas via variáveis de ambiente
+    SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+    CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'False').lower() == 'true'
+    
     # SAMESITE para cookies em produção
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_SAMESITE = 'Lax'

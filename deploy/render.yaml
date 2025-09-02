@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: caresense
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "./deploy/build.sh"
+    startCommand: "gunicorn caresense_project.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: CSRF_COOKIE_SECURE
+        value: true
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: admin@caresense.com
+      - key: DJANGO_SUPERUSER_PASSWORD
+        generateValue: true
+  
+  - type: pserv
+    name: caresense-db
+    env: postgresql
+    region: oregon
+    plan: free
+    databaseName: caresense
+    databaseUser: caresense
