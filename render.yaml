@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "gunicorn caresense_project.wsgi:application"
+    startCommand: "./start.sh"
     envVars:
       - key: DEBUG
         value: false
