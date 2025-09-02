@@ -16,13 +16,9 @@ pip install -r requirements/requirements-prod.txt
 echo "📁 Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
 
-# Gerar migrações iniciais (banco limpo)
-echo "🔄 Gerando migrações iniciais..."
-python manage.py makemigrations
-
-# Executar migrações (criação completa do banco)
-echo "🗄️ Criando estrutura do banco..."
-python manage.py migrate
+# Configurar banco de dados de forma inteligente
+echo "🗄️ Configurando banco de dados..."
+python manage.py smart_database_setup
 
 # Criar superusuário apenas se configurado
 if [ "$DJANGO_SUPERUSER_PASSWORD" ]; then
