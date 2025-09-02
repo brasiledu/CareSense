@@ -6,7 +6,7 @@ echo "🚀 Iniciando build do CareSense..."
 
 # Instalar dependências de produção
 echo "📦 Instalando dependências..."
-pip install -r requirements/requirements-prod.txt
+pip install -r requirements-render.txt
 
 # Coletando arquivos estáticos
 echo "📁 Coletando arquivos estáticos..."
