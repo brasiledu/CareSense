@@ -1,4 +1,14 @@
-# Deploy no Render - CareSense
+# Deploy no Render### 2. Configurar Web Service
+
+**Configurações Básicas:**
+- **Name:** `caresense`
+- **Region:** `Oregon (US West)`
+- **Branch:** `main`
+- **Runtime:** `Python 3`
+- **Build Command:** `./deploy/build.sh`
+- **Start Command:** `gunicorn caresense_project.wsgi:application`
+
+> **⚠️ IMPORTANTE:** Se o campo "Start Command" não estiver disponível, o Render usará automaticamente o arquivo `Procfile` na raiz do projeto.nse
 
 ## 📋 Pré-requisitos PRONTOS ✅
 
@@ -34,7 +44,7 @@ Na seção **Environment Variables**, adicione:
 ```
 DEBUG = false
 SECRET_KEY = +6#zs04%$_a*@u#*k)r0e2_3v)ni_52#jn+-+#l2m+v0o04k+i
-PYTHON_VERSION = 3.12.0
+PYTHON_VERSION = 3.13.0
 ```
 
 #### 🔒 Segurança HTTPS:
@@ -167,6 +177,13 @@ O sistema configurará automaticamente:
 ### Build Falha
 - Verifique se `build.sh` está executável
 - Confirme se `requirements.txt` está correto
+
+### Erro "ModuleNotFoundError: No module named 'app'"
+**Causa:** Render não está usando o comando correto do Django
+**Solução:**
+1. Verifique se existe `Procfile` na raiz do projeto
+2. Confirme que o Start Command está: `gunicorn caresense_project.wsgi:application`
+3. Se usar render.yaml, certifique-se que está configurado corretamente
 
 ### Database Error
 - Verifique se `DATABASE_URL` está configurado

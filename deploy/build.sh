@@ -11,9 +11,6 @@ python manage.py collectstatic --noinput
 # Executar migrações
 python manage.py migrate
 
-# Criar superusuário (se não existir)
-python manage.py create_superuser
-
 # Criar superusuário se não existir (apenas em produção)
 if [ "$DJANGO_SUPERUSER_PASSWORD" ]; then
     python manage.py create_superuser
