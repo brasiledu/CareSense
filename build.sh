@@ -16,8 +16,12 @@ pip install -r requirements-render.txt
 echo "📁 Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
 
-# Executar migrações
-echo "🗄️ Executando migrações..."
+# Gerar migrações iniciais (banco limpo)
+echo "🔄 Gerando migrações iniciais..."
+python manage.py makemigrations
+
+# Executar migrações (criação completa do banco)
+echo "🗄️ Criando estrutura do banco..."
 python manage.py migrate
 
 # Criar superusuário apenas se configurado
