@@ -1,0 +1,33 @@
+# Render-specific requirements
+# Core framework
+Django==4.2.14
+
+# API Framework
+djangorestframework==3.15.2
+
+# Database utilities
+dj-database-url==2.1.0
+
+# PostgreSQL driver (compatível com Render/Python 3.13)
+psycopg[binary]>=3.2.2
+
+# Static files handling
+whitenoise==6.5.0
+
+# Environment variables management
+python-decouple==3.8
+
+# Date/time utilities
+python-dateutil==2.8.2
+
+# HTTP requests
+requests==2.31.0
+
+# Timezone handling
+pytz==2023.3
+
+# Production WSGI server
+gunicorn==21.2.0
+
+# CORS handling
+django-cors-headers==4.3.1

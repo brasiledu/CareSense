@@ -10,7 +10,7 @@ dj-database-url==2.1.0
 
 # PostgreSQL para produção (compatível com múltiplas versões Python)
 psycopg2-binary==2.9.9; python_version < "3.13"
-psycopg[binary]==3.2.1; python_version >= "3.13"
+psycopg[binary]>=3.2.2; python_version >= "3.13"
 
 # Static files handling
 whitenoise==6.5.0

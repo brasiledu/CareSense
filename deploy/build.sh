@@ -4,6 +4,10 @@ set -o errexit
 
 echo "🚀 Iniciando build do CareSense..."
 
+# Atualizar pip primeiro
+echo "⬆️ Atualizando pip..."
+pip install --upgrade pip
+
 # Instalar dependências de produção
 echo "📦 Instalando dependências..."
 pip install -r requirements/requirements-prod.txt
