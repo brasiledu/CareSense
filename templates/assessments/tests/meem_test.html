@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Mini Exame do Estado Mental (MEEM){% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">Mini Exame do Estado Mental (MEEM)</h3>
+                        <small class="text-muted">Paciente: {{ assessment.patient.full_name }}</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <style>
+                        /* Identidade visual consistente com base.html */
+                        .meem-section {border:1px solid #e9ecef; border-radius:10px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.04); margin-bottom:1rem;}
+                        .meem-section-header {background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color:#fff; padding:0.75rem 1rem; border-top-left-radius:10px; border-top-right-radius:10px; display:flex; align-items:center; gap:.5rem}
+                        .meem-section-header .idx {display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; border-radius:6px; background:#ffffff22; font-weight:700; margin-right:.5rem}
+                        .meem-section-title {margin:0; font-weight:600}
+                        .meem-section-body {padding:1rem}
+                        .meem-instructions {color:#6c757d; font-size:.9rem; margin-bottom:.5rem}
+                        .meem-field-block {border:1px solid #e9ecef; border-left:4px solid #007bff; border-radius:8px; background:#fdfdfd; padding:.75rem 1rem}
+                        .meem-field-label {font-weight:600; margin-bottom:.5rem}
+                        .meem-inline-options .form-check {margin-right:1rem}
+                        .meem-summary .progress {height:10px}
+                        @media (max-width: 576px) {.meem-inline-options {gap: .5rem}}
+                    </style>
+
+                    <form method="post" id="meem-form">
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        {% with sections=form.get_sections_with_fields %}
+                            {% for section_title, section in sections.items %}
+                                <div class="meem-section">
+                                    <div class="meem-section-header">
+                                        <span class="idx">{{ forloop.counter }}</span>
+                                        <h5 class="meem-section-title">{{ section_title }}</h5>
+                                    </div>
+                                    <div class="meem-section-body">
+                                        {% if section.instruction_text %}
+                                            <p class="meem-instructions">{{ section.instruction_text }}</p>
+                                        {% endif %}
+                                        {% if section.instructions %}
+                                            <ul class="meem-instructions">
+                                                {% for instr in section.instructions %}
+                                                    <li>{{ instr }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+
+                                        <div class="row g-3">
+                                            {% for field in section.form_fields %}
+                                                <div class="col-md-6">
+                                                    <div class="meem-field-block h-100">
+                                                        <div class="meem-field-label">{{ forloop.parentloop.counter }}.{{ forloop.counter }} — {{ field.label }}</div>
+                                                        <div class="meem-inline-options d-flex align-items-center gap-4 flex-wrap">
+                                                            {% for sub in field %}
+                                                                <div class="form-check form-check-inline m-0">
+                                                                    {{ sub.tag }}
+                                                                    <label class="form-check-label ms-1" for="{{ sub.id_for_label }}">{{ sub.choice_label }}</label>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                        {% if field.errors %}
+                                                            <div class="text-danger small mt-2">{{ field.errors }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endwith %}
+
+                        <div class="card mb-3 bg-light border-0 meem-summary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-uppercase text-muted mb-0">Pontuação (prévia no cliente)</h6>
+                                    <span class="badge bg-secondary">Máximo: 30</span>
+                                </div>
+                                <h4 class="mb-3">Total estimado: <span id="total-score">0</span>/30</h4>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: 0%" id="progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary btn-lg">Salvar Avaliação</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    function updateScore() {
+        var checked = document.querySelectorAll('#meem-form input[type="radio"]:checked');
+        var total = 0;
+        checked.forEach(function(el) { var v = parseInt(el.value, 10); if (!isNaN(v)) total += v; });
+        var totalEl = document.getElementById('total-score'); if (totalEl) totalEl.textContent = total;
+        var pct = Math.max(0, Math.min(100, (total / 30) * 100));
+        var bar = document.getElementById('progress-bar'); if (bar) {
+            bar.style.width = pct + '%';
+            if (total >= 24) { bar.className = 'progress-bar bg-success'; }
+            else if (total >= 18) { bar.className = 'progress-bar bg-warning'; }
+            else { bar.className = 'progress-bar bg-danger'; }
+        }
+    }
+    function bind() { document.querySelectorAll('#meem-form input[type="radio"]').forEach(function(el){ el.addEventListener('change', updateScore); }); updateScore(); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+})();
+</script>
+{% endblock %}

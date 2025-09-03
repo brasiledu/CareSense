@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block title %}Teste Digit Span - {{ assessment.patient.full_name }} - CareSense{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1><i class="fas fa-list-ol"></i> Teste Digit Span</h1>
+    <div style="background: #e8f4f8; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <strong><i class="fas fa-user"></i> Paciente:</strong> {{ assessment.patient.full_name }} ({{ assessment.patient.age }} anos)<br>
+        <strong><i class="fas fa-target"></i> Teste:</strong> Avaliação da memória de trabalho e atenção
+    </div>
+</div>
+
+<!-- Interface do Teste Interativo (um único dispositivo) -->
+<div id="testInterface" class="card" style="display: none;">
+    <div id="testHeader" style="text-align: center; margin-bottom: 2rem;">
+        <h2 id="currentTest">Digit Span - Ordem Direta</h2>
+        <div id="sequenceDisplay" style="font-size: 2.5rem; font-weight: 700; color: #2c3e50; margin: 1rem 0; min-height: 72px; display: flex; align-items: center; justify-content: center;">
+            Pressione INICIAR para começar
+        </div>
+        <div id="instructionText" style="background: #e8f4f8; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+            Ouça/veja a sequência de números e repita na mesma ordem (o avaliador registrará acerto/erro)
+        </div>
+    </div>
+
+    <!-- Controles do teste -->
+    <div id="testControls" style="text-align: center; margin: 2rem 0;">
+        <button id="startBtn" onclick="startDigitSpan()" class="btn btn-success" style="font-size: 1.1rem; padding: 0.9rem 1.5rem;">
+            Iniciar teste
+        </button>
+        <button id="playBtn" onclick="playSequence()" class="btn btn-primary" style="display: none; margin-left: 0.75rem;">
+            Reproduzir sequência
+        </button>
+        <button id="repeatBtn" onclick="repeatSequence()" class="btn" style="display: none; margin-left: 0.75rem;">
+            Repetir sequência
+        </button>
+        <button id="reverseBtn" onclick="startReverse()" class="btn btn-primary" style="display: none; margin-left: 0.75rem;">
+            Ordem reversa
+        </button>
+        <button id="finishBtn" onclick="finishDigitSpan()" class="btn btn-success" style="display: none; margin-left: 0.75rem;">
+            Finalizar
+        </button>
+    </div>
+
+    <div id="trialInfo" style="text-align: center; margin: 1rem 0; font-weight: 600;"></div>
+
+    <!-- Área de marcação pelo avaliador -->
+    <div id="markingArea" style="text-align: center; display: none; margin: 1.5rem 0;">
+        <div style="margin-bottom: 0.75rem; color: #6c757d;">O avaliador deve marcar o resultado desta tentativa:</div>
+        <button id="markCorrectBtn" class="btn btn-success" onclick="recordResult(true)">Acertou</button>
+        <button id="markIncorrectBtn" class="btn btn-warning" onclick="recordResult(false)" style="margin-left: 0.75rem; color: #212529;">Errou</button>
+    </div>
+
+    <div id="feedback" style="text-align: center; margin: 1rem 0; font-weight: 600; min-height: 24px;"></div>
+</div>
+
+<!-- Instruções Iniciais -->
+<div id="instructionsCard" class="card">
+    <h2><i class="fas fa-info-circle"></i> Instruções</h2>
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 4px; margin-bottom: 2rem;">
+        <h4>Ordem Direta:</h4>
+        <p>O paciente deve repetir uma sequência de números na mesma ordem que foram apresentados.</p>
+        <p style="color: #e67e22;"><strong>Exemplo:</strong> Sequência: "2 - 8 - 3" → Resposta: "2 8 3"</p>
+        <h4 style="margin-top: 1.5rem;">Ordem Reversa:</h4>
+        <p>O paciente deve repetir uma sequência de números na ordem inversa.</p>
+        <p style="color: #e67e22;"><strong>Exemplo:</strong> Sequência: "2 - 8 - 3" → Resposta: "3 8 2"</p>
+        <p style="color: #e74c3c;"><strong>Importante:</strong> O teste termina após 2 erros consecutivos na mesma fase.</p>
+    </div>
+    <div style="text-align: center;">
+        <button onclick="showTestInterface()" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.9rem 1.5rem;">
+            Começar teste interativo
+        </button>
+    </div>
+</div>
+
+<!-- Formulário de Resultados (campos compatíveis com o backend) -->
+<form method="POST" id="resultsForm" class="card" style="display: none;">
+    {% csrf_token %}
+    <h2><i class="fas fa-save"></i> Resultados do Teste</h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0;">
+        <!-- Ordem Direta -->
+        <div style="background: #f8f9fa; padding: 1.25rem; border-radius: 8px;">
+            <h3><i class="fas fa-arrow-right"></i> Ordem Direta</h3>
+            <div style="margin: 0.75rem 0;">
+                <label for="forward_span" style="display: block; font-weight: 600; margin-bottom: 0.4rem;">Maior sequência correta</label>
+                <input type="number" id="forward_span" name="forward_span" min="0" max="15" required readonly style="width: 100%; padding: 0.65rem; border: 1px solid #ddd; border-radius: 6px;">
+                <small style="color: #6c757d;">Registrado automaticamente</small>
+            </div>
+            <div style="margin: 0.75rem 0;">
+                <label for="forward_score" style="display: block; font-weight: 600; margin-bottom: 0.4rem;">Total de acertos</label>
+                <input type="number" id="forward_score" name="forward_score" min="0" max="30" required readonly style="width: 100%; padding: 0.65rem; border: 1px solid #ddd; border-radius: 6px;">
+                <small style="color: #6c757d;">Registrado automaticamente</small>
+            </div>
+        </div>
+        <!-- Ordem Reversa -->
+        <div style="background: #f8f9fa; padding: 1.25rem; border-radius: 8px;">
+            <h3><i class="fas fa-arrow-left"></i> Ordem Reversa</h3>
+            <div style="margin: 0.75rem 0;">
+                <label for="backward_span" style="display: block; font-weight: 600; margin-bottom: 0.4rem;">Maior sequência correta</label>
+                <input type="number" id="backward_span" name="backward_span" min="0" max="15" required readonly style="width: 100%; padding: 0.65rem; border: 1px solid #ddd; border-radius: 6px;">
+                <small style="color: #6c757d;">Registrado automaticamente</small>
+            </div>
+            <div style="margin: 0.75rem 0;">
+                <label for="backward_score" style="display: block; font-weight: 600; margin-bottom: 0.4rem;">Total de acertos</label>
+                <input type="number" id="backward_score" name="backward_score" min="0" max="30" required readonly style="width: 100%; padding: 0.65rem; border: 1px solid #ddd; border-radius: 6px;">
+                <small style="color: #6c757d;">Registrado automaticamente</small>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin: 1.5rem 0; text-align: center;">
+        <button type="submit" class="btn btn-success" style="font-size: 1rem; padding: 0.8rem 1.4rem;">
+            Salvar resultados
+        </button>
+        <a href="{% url 'run_tests' assessment.id %}" class="btn" style="margin-left: 0.75rem;">Voltar aos testes</a>
+    </div>
+</form>
+
+<div class="card">
+    <h2><i class="fas fa-ruler"></i> Valores de Referência</h2>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+            <h4>Digit Span Direto - Valores Normais:</h4>
+            <ul style="line-height: 1.8;">
+                <li><strong>Adultos (média):</strong> 6-7 dígitos</li>
+                <li><strong>Limite inferior:</strong> 5 dígitos</li>
+                <li><strong>Superior:</strong> 8-9 dígitos</li>
+                <li><strong>Idosos:</strong> 5-6 dígitos</li>
+            </ul>
+        </div>
+        <div>
+            <h4>Digit Span Reverso - Valores Normais:</h4>
+            <ul style="line-height: 1.8;">
+                <li><strong>Adultos (média):</strong> 4-5 dígitos</li>
+                <li><strong>Limite inferior:</strong> 3 dígitos</li>
+                <li><strong>Superior:</strong> 6-7 dígitos</li>
+                <li><strong>Idosos:</strong> 3-4 dígitos</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div style="background: #fff3cd; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+        <strong><i class="fas fa-lightbulb"></i> Dica de Aplicação:</strong>
+        O teste apresenta as sequências com intervalos de 1 segundo entre os números. Use fones de ouvido se disponível.
+    </div>
+    
+    <div style="background: #d1ecf1; padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+        <strong><i class="fas fa-brain"></i> Interpretação:</strong>
+        Deficit significativo pode indicar problemas de memória de trabalho, atenção ou processamento auditivo.
+    </div>
+</div>
+
+<script>
+// Estado do Digit Span (sem revelar respostas)
+let digitSpanData = {
+    direct: { maxSpan: 0, totalCorrect: 0, trials: [], errors: 0 },
+    reverse: { maxSpan: 0, totalCorrect: 0, trials: [], errors: 0 },
+    currentPhase: 'direct',
+    currentLength: 3,
+    currentTrial: 1,
+    currentSequence: [],
+    trialsPerLength: 2,
+    maxErrors: 2,
+    isPlaying: false
+};
+
+// Sequências pré-definidas para consistência (não exibir respostas corretas em feedback)
+const digitSequences = {
+    3: [ [2,1,3],[5,8,2],[6,9,4],[7,2,8] ],
+    4: [ [6,4,3,9],[7,2,8,6],[4,2,7,3],[8,1,5,4] ],
+    5: [ [4,2,7,3,1],[7,5,8,3,6],[6,1,9,4,7],[3,9,2,4,8] ],
+    6: [ [6,1,9,7,4,2],[3,9,2,4,8,7],[5,9,1,7,4,2],[4,1,7,9,3,8] ],
+    7: [ [5,8,1,3,2,6,4],[3,8,2,9,6,1,7],[2,7,5,8,6,2,5],[8,1,2,9,3,6,5] ],
+    8: [ [9,4,3,7,6,2,5,8],[7,2,8,1,9,6,5,3],[5,3,9,4,1,8,6,2],[4,1,7,9,2,8,5,6] ],
+    9: [ [3,9,8,1,2,5,4,7,6],[6,4,8,9,1,7,2,3,5],[1,5,2,8,6,9,7,4,3],[7,9,6,4,8,3,1,5,2] ]
+};
+
+function showTestInterface() {
+    document.getElementById('instructionsCard').style.display = 'none';
+    document.getElementById('testInterface').style.display = 'block';
+}
+
+function startDigitSpan() {
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('playBtn').style.display = 'inline-block';
+    updateTrialInfo();
+    generateSequence();
+}
+
+function generateSequence() {
+    const sequences = digitSequences[digitSpanData.currentLength] || [];
+    const trialIndex = (digitSpanData.currentTrial - 1) % (sequences.length || 1);
+    digitSpanData.currentSequence = sequences[trialIndex] || [];
+
+    document.getElementById('sequenceDisplay').textContent = 'Sequência pronta. Clique em "Reproduzir sequência"';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('markingArea').style.display = 'none';
+    document.getElementById('repeatBtn').style.display = 'none';
+}
+
+function playSequence() {
+    if (digitSpanData.isPlaying) return;
+    digitSpanData.isPlaying = true;
+
+    const sequence = digitSpanData.currentSequence;
+    const display = document.getElementById('sequenceDisplay');
+
+    display.textContent = '';
+    let index = 0;
+
+    const interval = setInterval(() => {
+        if (index < sequence.length) {
+            display.textContent = sequence[index];
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(sequence[index].toString());
+                utterance.rate = 0.8; utterance.volume = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+            index++;
+        } else {
+            clearInterval(interval);
+            digitSpanData.isPlaying = false;
+            display.textContent = 'Repita a sequência para o avaliador.';
+            // Mostrar área de marcação para o avaliador
+            document.getElementById('markingArea').style.display = 'block';
+            document.getElementById('repeatBtn').style.display = 'inline-block';
+        }
+    }, 1000);
+}
+
+function repeatSequence() {
+    // Permitir repetir sem alterar estado
+    playSequence();
+}
+
+function recordResult(isCorrect) {
+    const phase = digitSpanData.currentPhase;
+    // Registrar tentativa (sem expor resposta)
+    digitSpanData[phase].trials.push({
+        length: digitSpanData.currentLength,
+        trial: digitSpanData.currentTrial,
+        correct: isCorrect
+    });
+
+    if (isCorrect) {
+        digitSpanData[phase].totalCorrect++;
+        digitSpanData[phase].maxSpan = Math.max(digitSpanData[phase].maxSpan, digitSpanData.currentLength);
+        digitSpanData[phase].errors = 0;
+        showFeedback('Resposta registrada como correta.', '#27ae60');
+    } else {
+        digitSpanData[phase].errors++;
+        showFeedback('Resposta registrada como incorreta.', '#e67e22');
+    }
+
+    document.getElementById('markingArea').style.display = 'none';
+    document.getElementById('repeatBtn').style.display = 'none';
+    nextTrial();
+}
+
+function nextTrial() {
+    const phase = digitSpanData.currentPhase;
+
+    // Encerrar fase após 2 erros consecutivos
+    if (digitSpanData[phase].errors >= digitSpanData.maxErrors) {
+        if (phase === 'direct') {
+            document.getElementById('reverseBtn').style.display = 'inline-block';
+            document.getElementById('playBtn').style.display = 'none';
+            document.getElementById('instructionText').textContent = 'Fase direta concluída. Clique em "Ordem reversa" para continuar.';
+        } else {
+            finishDigitSpan();
+        }
+        return;
+    }
+
+    // Avançar tentativa/comprimento
+    digitSpanData.currentTrial++;
+    if (digitSpanData.currentTrial > digitSpanData.trialsPerLength) {
+        digitSpanData.currentLength++;
+        digitSpanData.currentTrial = 1;
+        if (digitSpanData.currentLength > 9) {
+            if (phase === 'direct') {
+                document.getElementById('reverseBtn').style.display = 'inline-block';
+                document.getElementById('playBtn').style.display = 'none';
+                document.getElementById('instructionText').textContent = 'Fase direta concluída. Clique em "Ordem reversa" para continuar.';
+            } else {
+                finishDigitSpan();
+            }
+            return;
+        }
+    }
+
+    updateTrialInfo();
+    generateSequence();
+}
+
+function startReverse() {
+    digitSpanData.currentPhase = 'reverse';
+    digitSpanData.currentLength = 2;
+    digitSpanData.currentTrial = 1;
+
+    document.getElementById('reverseBtn').style.display = 'none';
+    document.getElementById('playBtn').style.display = 'inline-block';
+    document.getElementById('currentTest').textContent = 'Digit Span - Ordem Reversa';
+    document.getElementById('instructionText').textContent = 'Agora repita os números na ordem inversa (o avaliador registrará o resultado).';
+
+    updateTrialInfo();
+    generateSequence();
+}
+
+function finishDigitSpan() {
+    // Preencher formulário com campos esperados pelo backend
+    document.getElementById('forward_span').value = digitSpanData.direct.maxSpan;
+    document.getElementById('forward_score').value = digitSpanData.direct.totalCorrect;
+    document.getElementById('backward_span').value = digitSpanData.reverse.maxSpan;
+    document.getElementById('backward_score').value = digitSpanData.reverse.totalCorrect;
+
+    document.getElementById('testInterface').style.display = 'none';
+    document.getElementById('resultsForm').style.display = 'block';
+}
+
+function updateTrialInfo() {
+    const info = `${digitSpanData.currentPhase === 'direct' ? 'Direta' : 'Reversa'} • Comprimento: ${digitSpanData.currentLength} • Tentativa: ${digitSpanData.currentTrial}/${digitSpanData.trialsPerLength}`;
+    document.getElementById('trialInfo').textContent = info;
+}
+
+function showFeedback(message, color) {
+    const feedback = document.getElementById('feedback');
+    feedback.textContent = message;
+    feedback.style.color = color;
+}
+</script>
+{% endblock %}

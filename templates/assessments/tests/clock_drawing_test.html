@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Teste do Desenho do Relógio{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">Teste do Desenho do Relógio</h3>
+                        <small class="text-muted">Paciente: {{ assessment.patient.full_name }}</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <style>
+                        .cdt-panel{border:1px solid #e9ecef;border-radius:10px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.04)}
+                        .cdt-panel-header{background:linear-gradient(135deg,#2c3e50 0%,#34495e 100%);color:#fff;padding:.6rem .9rem;border-top-left-radius:10px;border-top-right-radius:10px;display:flex;align-items:center;gap:.5rem}
+                        .cdt-panel-title{margin:0;font-weight:600}
+                        .cdt-panel-body{padding:1rem}
+                        .drawing-container{width:100%;}
+                        .drawing-canvas{width:100%;height:auto;border:2px solid #ccc;cursor:crosshair;background:#fff;border-radius:6px}
+                        .cdt-field{border:1px solid #e9ecef;border-left:4px solid #007bff;border-radius:8px;background:#fdfdfd;padding:.75rem 1rem;margin-bottom:.75rem}
+                        .cdt-field label{font-weight:600;margin-bottom:.25rem}
+                        .form-check-inline{margin-right:1rem}
+                        @media (max-width: 576px){.cdt-actions .btn{width:100%;margin-bottom:.5rem}}
+                    </style>
+
+                    <div id="test-container">
+                        <div class="alert alert-info">
+                            <h5 class="mb-1">Instruções:</h5>
+                            <p class="mb-1"><strong>1ª Parte:</strong> Desenhe um relógio com todos os números</p>
+                            <p class="mb-0"><strong>2ª Parte:</strong> Coloque os ponteiros marcando 11h10min</p>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-7">
+                                <div class="cdt-panel">
+                                    <div class="cdt-panel-header">
+                                        <h6 class="cdt-panel-title mb-0">Área de Desenho</h6>
+                                        <small class="text-white-50">Use o mouse/dedo para desenhar</small>
+                                    </div>
+                                    <div class="cdt-panel-body text-center">
+                                        <div class="drawing-container">
+                                            <canvas id="drawing-canvas" class="drawing-canvas" width="400" height="400"></canvas>
+                                        </div>
+                                        <div class="mt-3 cdt-actions d-flex gap-2 justify-content-center flex-wrap">
+                                            <button type="button" class="btn btn-warning btn-sm" onclick="clearCanvas()">Limpar</button>
+                                            <button type="button" class="btn btn-secondary btn-sm" onclick="undo()">Desfazer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-5">
+                                <form method="post" id="clock-form">
+                                    {% csrf_token %}
+
+                                    {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                                    {% endif %}
+
+                                    <div class="cdt-panel mb-3">
+                                        <div class="cdt-panel-header">
+                                            <h6 class="cdt-panel-title mb-0">Parâmetros</h6>
+                                        </div>
+                                        <div class="cdt-panel-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">{{ form.requested_time.label }}</label>
+                                                {{ form.requested_time }}
+                                            </div>
+                                            <div class="cdt-field">
+                                                <label>{{ form.circle_score.label }}</label>
+                                                <div>
+                                                    {% for sub in form.circle_score %}
+                                                    <div class="form-check form-check-inline">
+                                                        {{ sub.tag }}
+                                                        <label class="form-check-label ms-1" for="{{ sub.id_for_label }}">{{ sub.choice_label }}</label>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% if form.circle_score.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.circle_score.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="cdt-field">
+                                                <label>{{ form.numbers_score.label }}</label>
+                                                <div>
+                                                    {% for sub in form.numbers_score %}
+                                                    <div class="form-check form-check-inline">
+                                                        {{ sub.tag }}
+                                                        <label class="form-check-label ms-1" for="{{ sub.id_for_label }}">{{ sub.choice_label }}</label>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% if form.numbers_score.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.numbers_score.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="cdt-field">
+                                                <label>{{ form.hands_score.label }}</label>
+                                                <div>
+                                                    {% for sub in form.hands_score %}
+                                                    <div class="form-check form-check-inline">
+                                                        {{ sub.tag }}
+                                                        <label class="form-check-label ms-1" for="{{ sub.id_for_label }}">{{ sub.choice_label }}</label>
+                                                    </div>
+                                                    {% endfor %}
+                                                    {% if form.hands_score.errors %}
+                                                        <div class="text-danger small mt-1">{{ form.hands_score.errors }}</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">{{ form.observations.label }}</label>
+                                                {{ form.observations }}
+                                            </div>
+
+                                            {{ form.drawing_data }}
+
+                                            <div class="alert alert-primary">
+                                                <strong>Total (prévia): <span id="total-score">0</span>/10</strong>
+                                                <div class="progress mt-2">
+                                                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary w-100">Salvar Avaliação</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Canvas responsivo com DPR e Pointer Events
+(function(){
+    const canvas = document.getElementById('drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false; let drawingHistory = []; let currentPath = [];
+
+    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
+
+    function resizeCanvas(){
+        const dpr = window.devicePixelRatio || 1;
+        const parent = canvas.parentElement; // drawing-container
+        const size = Math.min(500, parent.clientWidth);
+        // Set CSS size
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        // Set internal size scaled by DPR
+        canvas.width = Math.floor(size * dpr);
+        canvas.height = Math.floor(size * dpr);
+        ctx.scale(dpr, dpr);
+        // Redesenhar paths existentes no novo tamanho CSS
+        redrawCanvas();
+    }
+
+    function getPos(evt){
+        const rect = canvas.getBoundingClientRect();
+        return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    }
+
+    canvas.addEventListener('pointerdown', (e)=>{
+        if(!e.isPrimary) return; canvas.setPointerCapture(e.pointerId); isDrawing = true; currentPath = [];
+        const {x,y} = getPos(e); ctx.beginPath(); ctx.moveTo(x,y); currentPath.push({x,y,type:'move'});
+    });
+    canvas.addEventListener('pointermove', (e)=>{
+        if(!isDrawing || !e.isPrimary) return; const {x,y} = getPos(e); ctx.lineTo(x,y); ctx.stroke(); currentPath.push({x,y,type:'line'});
+    });
+    function endPointer(e){ if(!e.isPrimary) return; if(isDrawing){ isDrawing=false; canvas.releasePointerCapture(e.pointerId); drawingHistory.push([...currentPath]); saveDrawingData(); } }
+    canvas.addEventListener('pointerup', endPointer);
+    canvas.addEventListener('pointercancel', endPointer);
+    canvas.addEventListener('pointerleave', endPointer);
+
+    function redrawCanvas(){
+        // Limpa no espaço CSS (context já escalado)
+        const rect = canvas.getBoundingClientRect();
+        ctx.clearRect(0,0,rect.width,rect.height);
+        drawingHistory.forEach(path=>{
+            if(path.length){ ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); for(let i=1;i<path.length;i++){ const p=path[i]; if(p.type==='line'){ ctx.lineTo(p.x,p.y);} } ctx.stroke(); }
+        });
+    }
+
+    function clearCanvas(){ ctx.clearRect(0,0,canvas.getBoundingClientRect().width,canvas.getBoundingClientRect().height); drawingHistory=[]; saveDrawingData(); }
+    function undo(){ if(drawingHistory.length){ drawingHistory.pop(); redrawCanvas(); saveDrawingData(); } }
+
+    window.clearCanvas = clearCanvas; window.undo = undo;
+
+    function saveDrawingData(){
+        const input = document.getElementById('id_drawing_data');
+        if(input){ input.value = JSON.stringify(drawingHistory); }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+})();
+
+// Prévia de pontuação e progress bar baseada nos rádios do formulário
+(function(){
+    function updateScore(){
+        function val(name){ const el=document.querySelector('input[name="'+name+'"]:checked'); return el?parseInt(el.value,10):0; }
+        const total = val('circle_score') + val('numbers_score') + val('hands_score');
+        const totalEl = document.getElementById('total-score'); if(totalEl) totalEl.textContent = total;
+        const pct = Math.max(0, Math.min(100, (total/10)*100));
+        const bar = document.getElementById('progress-bar'); if(bar){ bar.style.width = pct+'%'; bar.className = 'progress-bar '+(total>=8?'bg-success':(total>=6?'bg-warning':'bg-danger')); }
+    }
+    function bind(){
+        document.querySelectorAll('#clock-form input[type="radio"]').forEach(el=>el.addEventListener('change', updateScore));
+        updateScore();
+    }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', bind); } else { bind(); }
+})();
+</script>
+{% endblock %}

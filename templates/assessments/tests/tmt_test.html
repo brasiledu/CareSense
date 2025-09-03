@@ -1,0 +1,498 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Trail Making Test - {{ assessment.patient.full_name }} - CareSense{% endblock %}
+
+{% block extra_css %}
+<style>
+    .canvas-container { position: relative; border: 1px solid #ddd; border-radius: 8px; background: #fff; margin: 1rem 0; overflow: hidden; width: 100%; }
+    .canvas-container { aspect-ratio: 4 / 3; }
+    #tmt-canvas { display: block; cursor: crosshair; touch-action: none; }
+    .test-info { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1rem 0; text-align: center; }
+    .info-card { background: #f8f9fa; padding: 1rem; border-radius: 6px; }
+    .info-value { font-size: 1.5rem; font-weight: 700; color: #3498db; }
+    .info-label { font-size: 0.9rem; color: #6c757d; margin-top: 0.25rem; }
+    .hidden { display: none; }
+
+    /* Responsividade da grade de informações */
+    @media (max-width: 992px) {
+        .test-info { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 576px) {
+        .test-info { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1><i class="fas fa-route"></i> Trail Making Test (TMT)</h1>
+    <div style="background: #e8f4f8; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <strong><i class="fas fa-user"></i> Paciente:</strong> {{ assessment.patient.full_name }}{% if assessment.patient.age %} ({{ assessment.patient.age }} anos){% endif %}<br>
+        <strong><i class="fas fa-target"></i> Teste:</strong> Atenção e flexibilidade cognitiva
+    </div>
+</div>
+
+<!-- Instruções iniciais -->
+<div id="instructionsCard" class="card">
+    <h2><i class="fas fa-info-circle"></i> Instruções</h2>
+    <div class="test-instructions">
+        <p><strong>Parte A:</strong> Conecte os números em ordem crescente (1 → 2 → 3 → ... → 25)</p>
+        <p><strong>Parte B:</strong> Conecte números e letras alternadamente (1 → A → 2 → B → 3 → C → ...)</p>
+        <ul>
+            <li>Clique nos círculos na ordem correta</li>
+            <li>Faça o mais rápido possível, evitando erros</li>
+            <li>Erros são contabilizados, sem mostrar o alvo correto</li>
+        </ul>
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+        <button onclick="showTestInterface()" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.9rem 1.4rem;">Começar teste interativo</button>
+        <a href="{% url 'run_tests' assessment.id %}" class="btn" style="margin-left: 0.5rem;">Voltar</a>
+    </div>
+</div>
+
+<!-- Interface do Teste (um único dispositivo) -->
+<div id="testInterface" class="card" style="display: none;">
+    <div id="testHeader" style="text-align: center; margin-bottom: 1rem;">
+        <h2 id="currentTest">TMT Parte A</h2>
+        <div class="timer-display" id="timer">00:00</div>
+        <div id="instructionText" class="test-instructions" style="margin: 0;">
+            Conecte de acordo com as regras da parte atual. Clique em INICIAR quando estiver pronto.
+        </div>
+    </div>
+
+    <div class="test-info">
+        <div class="info-card">
+            <div class="info-value" id="current-part">A</div>
+            <div class="info-label">Parte Atual</div>
+        </div>
+        <div class="info-card">
+            <div class="info-value" id="errors-a-count">0</div>
+            <div class="info-label">Erros Parte A</div>
+        </div>
+        <div class="info-card">
+            <div class="info-value" id="errors-b-count">0</div>
+            <div class="info-label">Erros Parte B</div>
+        </div>
+        <div class="info-card">
+            <div class="info-value" id="progress">0/25</div>
+            <div class="info-label">Progresso</div>
+        </div>
+    </div>
+
+    <div class="alert alert-info" id="phase-indicator">
+        <strong>PARTE A:</strong> Conecte os números em ordem (1 → 2 → 3 → ... → 25)
+    </div>
+
+    <div id="canvas-container" class="canvas-container">
+        <canvas id="tmt-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div id="feedback" class="hidden" style="text-align: center; margin: 0.75rem 0; font-weight: 600; min-height: 24px;"></div>
+
+    <div class="test-controls" style="text-align: center; margin: 1rem 0;">
+        <button class="btn btn-success" id="start-btn" onclick="startTest()">Iniciar teste</button>
+        <button class="btn btn-primary hidden" id="next-part-btn" onclick="startPartB()">Parte B</button>
+        <button class="btn btn-danger hidden" id="restart-btn" onclick="restartCurrentPart()">Reiniciar parte</button>
+        <a class="btn" href="{% url 'run_tests' assessment.id %}">Voltar</a>
+    </div>
+
+    <div class="hidden" id="test-complete" style="text-align: center; padding: 1rem; background: #e8f5e8; border-radius: 8px;">
+        <h3>TMT concluído</h3>
+        <p>Os resultados serão salvos automaticamente.</p>
+        <div id="final-results"></div>
+    </div>
+
+    <!-- Formulário oculto para submissão ao backend existente -->
+    <form id="tmt-submit-form" method="post" action="{% url 'run_tmt' assessment.id %}" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="time_a" id="input-time-a">
+        <input type="hidden" name="errors_a" id="input-errors-a">
+        <input type="hidden" name="time_b" id="input-time-b">
+        <input type="hidden" name="errors_b" id="input-errors-b">
+    </form>
+</div>
+
+<script>
+// Constantes base para escalonamento responsivo
+const BASE_WIDTH = 800;
+const BASE_HEIGHT = 600;
+const BASE_RADIUS = 20; // raio em coordenadas base
+const MIN_TOUCH_RADIUS_CSS = 18; // raio mínimo em pixels CSS para toque confortável
+
+let canvas, ctx;
+let currentPart = 'A'; // 'A' ou 'B'
+let currentStep = 0;
+let partATime = 0;
+let partBTime = 0;
+let errorsA = 0;
+let errorsB = 0;
+let testData = [];
+let isTestActive = false;
+let circles = [];
+let path = []; // armazena coordenadas em espaço base
+let timerInterval = null;
+let scaleFactor = 1; // cssPixels / basePixels
+let resizeTimeout = null;
+let containerObserver = null;
+
+// Novo: controle de tempo estável com performance.now() e pausa ao ocultar a aba
+let timerStartedAt = null; // em ms de performance.now()
+let pausedAccumulatedMs = 0; // total pausado por visibilitychange
+let hiddenAt = null; // instante em que a página foi ocultada
+
+// Posições dos círculos para TMT-A (números 1-25) - coordenadas no espaço base 800x600
+const positionsA = [
+    {id: 1, x: 100, y: 100}, {id: 2, x: 300, y: 80}, {id: 3, x: 500, y: 120},
+    {id: 4, x: 700, y: 100}, {id: 5, x: 650, y: 250}, {id: 6, x: 500, y: 300},
+    {id: 7, x: 350, y: 280}, {id: 8, x: 200, y: 320}, {id: 9, x: 80, y: 250},
+    {id: 10, x: 150, y: 180}, {id: 11, x: 400, y: 150}, {id: 12, x: 600, y: 180},
+    {id: 13, x: 720, y: 300}, {id: 14, x: 600, y: 400}, {id: 15, x: 450, y: 450},
+    {id: 16, x: 300, y: 420}, {id: 17, x: 150, y: 450}, {id: 18, x: 50, y: 380},
+    {id: 19, x: 120, y: 300}, {id: 20, x: 250, y: 200}, {id: 21, x: 450, y: 200},
+    {id: 22, x: 550, y: 250}, {id: 23, x: 650, y: 350}, {id: 24, x: 500, y: 380},
+    {id: 25, x: 350, y: 350}
+];
+
+// Posições para TMT-B (números e letras alternados) - coordenadas no espaço base 800x600
+const positionsB = [
+    {id: 1, x: 80, y: 120}, {id: 'A', x: 200, y: 100}, {id: 2, x: 350, y: 80},
+    {id: 'B', x: 500, y: 120}, {id: 3, x: 650, y: 100}, {id: 'C', x: 700, y: 220},
+    {id: 4, x: 600, y: 280}, {id: 'D', x: 450, y: 250}, {id: 5, x: 300, y: 280},
+    {id: 'E', x: 150, y: 250}, {id: 6, x: 100, y: 350}, {id: 'F', x: 250, y: 380},
+    {id: 7, x: 400, y: 400}, {id: 'G', x: 550, y: 380}, {id: 8, x: 650, y: 450},
+    {id: 'H', x: 500, y: 500}, {id: 9, x: 350, y: 480}, {id: 'I', x: 200, y: 500},
+    {id: 10, x: 80, y: 450}, {id: 'J', x: 150, y: 380}, {id: 11, x: 300, y: 350},
+    {id: 'K', x: 450, y: 320}, {id: 12, x: 580, y: 320}, {id: 'L', x: 680, y: 350},
+    {id: 13, x: 720, y: 180}
+];
+
+function showTestInterface() {
+    document.getElementById('instructionsCard').style.display = 'none';
+    const ti = document.getElementById('testInterface');
+    ti.style.display = 'block';
+    // Inicializa canvas apenas quando visível
+    initCanvas();
+
+    // Observa mudanças no tamanho do container para ajustar o canvas em tempo real
+    const container = document.getElementById('canvas-container');
+    if (window.ResizeObserver && container) {
+        if (containerObserver) containerObserver.disconnect();
+        containerObserver = new ResizeObserver(() => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => initCanvas(), 50);
+        });
+        containerObserver.observe(container);
+    }
+}
+
+function initCanvas() {
+    canvas = document.getElementById('tmt-canvas');
+    ctx = canvas.getContext('2d');
+
+    // Remover listeners anteriores para evitar duplicidade
+    canvas.replaceWith(canvas.cloneNode(true));
+    canvas = document.getElementById('tmt-canvas');
+    ctx = canvas.getContext('2d');
+
+    // Eventos de interação com suporte a mouse/touch via Pointer Events
+    canvas.addEventListener('pointerdown', handlePointerDown, { passive: false });
+    canvas.addEventListener('pointerup', handlePointerUp, { passive: true });
+    canvas.addEventListener('pointercancel', handlePointerCancel, { passive: true });
+
+    // Tamanho responsivo mantendo proporção 4:3 (800x600)
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth || BASE_WIDTH;
+    const cssWidth = Math.min(BASE_WIDTH, Math.max(320, containerWidth));
+    const cssHeight = Math.round(cssWidth * (BASE_HEIGHT / BASE_WIDTH));
+
+    // Escala de desenho (CSS px por px base)
+    scaleFactor = cssWidth / BASE_WIDTH;
+
+    // Suporte a telas de alta densidade
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
+    canvas.width = Math.floor(cssWidth * dpr);
+    canvas.height = Math.floor(cssHeight * dpr);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+
+    drawCanvas();
+}
+
+function startTest() {
+    document.getElementById('start-btn').classList.add('hidden');
+    document.getElementById('restart-btn').classList.remove('hidden');
+    document.getElementById('instructionText').textContent = currentPart === 'A'
+        ? 'Conecte os números em ordem: 1 → 2 → 3 → ... → 25'
+        : 'Alterne entre números e letras: 1 → A → 2 → B → 3 → C → ...';
+    currentPart = 'A';
+    currentStep = 0;
+    errorsA = 0;
+    errorsB = 0;
+    path = [];
+    isTestActive = true;
+    setupPart(currentPart);
+    stopTimer();
+    startTimer();
+    updateUI();
+}
+
+function setupPart(part) {
+    const positions = part === 'A' ? positionsA : positionsB;
+    circles = positions.map(pos => ({ ...pos, completed: false }));
+    path = [];
+    drawCanvas();
+    updatePhaseIndicator(part);
+    document.getElementById('currentTest').textContent = `TMT Parte ${part}`;
+}
+
+function drawCanvas() {
+    if (!ctx || !canvas) return;
+    // Limpa área em coordenadas CSS (ctx já está escalado por DPR)
+    ctx.clearRect(0, 0, parseFloat(canvas.style.width), parseFloat(canvas.style.height));
+
+    // Desenha caminho já percorrido (coordenadas no espaço base → CSS via scaleFactor)
+    if (path.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(path[0].x * scaleFactor, path[0].y * scaleFactor);
+        for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(path[i].x * scaleFactor, path[i].y * scaleFactor);
+        }
+        ctx.strokeStyle = '#28a745';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+
+    const drawRadius = Math.max(MIN_TOUCH_RADIUS_CSS, BASE_RADIUS * scaleFactor);
+
+    // Desenha círculos
+    circles.forEach(circle => {
+        const x = circle.x * scaleFactor;
+        const y = circle.y * scaleFactor;
+        ctx.beginPath();
+        ctx.arc(x, y, drawRadius, 0, 2 * Math.PI);
+        if (circle.completed) { ctx.fillStyle = '#28a745'; ctx.strokeStyle = '#28a745'; }
+        else { ctx.fillStyle = '#f8f9fa'; ctx.strokeStyle = '#333'; }
+        ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = circle.completed ? 'white' : '#333';
+        ctx.font = `${Math.max(12, 16 * scaleFactor)}px Arial`;
+        ctx.font = `bold ${Math.max(12, 16 * scaleFactor)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(circle.id.toString(), x, y);
+    });
+}
+
+function handlePointerDown(event) {
+    if (!isTestActive) return;
+    event.preventDefault();
+    // Ignora multi-toque/ponteiros secundários
+    if (event.isPrimary === false) return;
+    try { if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId); } catch (e) {}
+
+    const rect = canvas.getBoundingClientRect();
+    const cssX = event.clientX - rect.left;
+    const cssY = event.clientY - rect.top;
+
+    // Converte para espaço base
+    const x = cssX / scaleFactor;
+    const y = cssY / scaleFactor;
+
+    const hitRadiusBase = Math.max(BASE_RADIUS, MIN_TOUCH_RADIUS_CSS / scaleFactor);
+    const clickedCircle = circles.find(circle => Math.hypot(x - circle.x, y - circle.y) <= hitRadiusBase);
+
+    if (clickedCircle) handleCircleClick(clickedCircle);
+}
+
+function handlePointerUp(event) {
+    try { if (canvas.releasePointerCapture) canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+}
+
+function handlePointerCancel(event) {
+    try { if (canvas.releasePointerCapture) canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+}
+
+function handleCircleClick(circle) {
+    const expectedTarget = getExpectedTarget();
+    if (circle.id === expectedTarget) {
+        circle.completed = true;
+        // Armazena pontos do caminho no espaço base
+        path.push({x: circle.x, y: circle.y});
+        currentStep++;
+        const maxSteps = 25;
+        if (currentStep >= maxSteps) {
+            completePart();
+        }
+        // Feedback discreto sem revelar próximo alvo
+        showFeedback('Passo registrado.', 'success');
+    } else {
+        if (currentPart === 'A') errorsA++; else errorsB++;
+        showFeedback('Incorreto. Tente novamente.', 'error');
+        testData.push({ part: currentPart, step: currentStep, clicked: circle.id, correct: false, timestamp: new Date().toISOString(), time: getElapsedSeconds() });
+    }
+    updateUI();
+    drawCanvas();
+}
+
+function getExpectedTarget() {
+    if (currentPart === 'A') return currentStep + 1;
+    const sequence = [1, 'A', 2, 'B', 3, 'C', 4, 'D', 5, 'E', 6, 'F', 7, 'G', 8, 'H', 9, 'I', 10, 'J', 11, 'K', 12, 'L', 13];
+    return sequence[currentStep];
+}
+
+function completePart() {
+    const partTime = getElapsedSeconds();
+    if (currentPart === 'A') {
+        partATime = partTime;
+        document.getElementById('next-part-btn').classList.remove('hidden');
+        document.getElementById('restart-btn').classList.add('hidden');
+        showFeedback(`Parte A concluída em ${partTime.toFixed(1)} segundos.`, 'success');
+    } else {
+        partBTime = partTime;
+        finishTest();
+    }
+    stopTimer();
+    isTestActive = false;
+}
+
+function startPartB() {
+    document.getElementById('next-part-btn').classList.add('hidden');
+    document.getElementById('restart-btn').classList.remove('hidden');
+    currentPart = 'B'; currentStep = 0; path = []; isTestActive = true;
+    setupPart(currentPart); startTimer(); updateUI();
+    document.getElementById('instructionText').textContent = 'Alterne entre números e letras: 1 → A → 2 → B → 3 → C → ...';
+}
+
+function restartCurrentPart() {
+    currentStep = 0; path = [];
+    if (currentPart === 'A') errorsA = 0; else errorsB = 0;
+    setupPart(currentPart);
+    stopTimer();
+    startTimer();
+    updateUI();
+}
+
+function startTimer() {
+    // Inicia o relógio com base em performance.now()
+    timerStartedAt = performance.now();
+    pausedAccumulatedMs = 0;
+    hiddenAt = null;
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    timerInterval = setInterval(updateTimer, 100);
+}
+
+function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    window.removeEventListener('visibilitychange', handleVisibilityChange);
+    hiddenAt = null;
+    timerStartedAt = null;
+}
+
+function handleVisibilityChange() {
+    if (!timerStartedAt) return;
+    if (document.hidden) {
+        hiddenAt = performance.now();
+    } else if (hiddenAt != null) {
+        pausedAccumulatedMs += performance.now() - hiddenAt;
+        hiddenAt = null;
+    }
+}
+
+function getElapsedSeconds() {
+    if (!timerStartedAt) return 0;
+    const now = performance.now();
+    const pausedNow = hiddenAt ? (now - hiddenAt) : 0;
+    const effectiveNow = now - pausedAccumulatedMs - pausedNow;
+    return (effectiveNow - timerStartedAt) / 1000;
+}
+
+function updateTimer() {
+    if (!timerStartedAt) return;
+    const elapsed = getElapsedSeconds();
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = (elapsed % 60).toFixed(1);
+    document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(4, '0')}`;
+}
+
+function updateUI() {
+    document.getElementById('current-part').textContent = currentPart;
+    document.getElementById('errors-a-count').textContent = errorsA;
+    document.getElementById('errors-b-count').textContent = errorsB;
+    const maxSteps = 25;
+    document.getElementById('progress').textContent = `${currentStep}/${maxSteps}`;
+}
+
+function updatePhaseIndicator(part) {
+    const indicator = document.getElementById('phase-indicator');
+    if (part === 'A') {
+        indicator.innerHTML = '<strong>PARTE A:</strong> Conecte os números em ordem (1 → 2 → 3 → ... → 25)';
+    } else {
+        indicator.innerHTML = '<strong>PARTE B:</strong> Conecte números e letras alternadamente (1 → A → 2 → B → ...)';
+    }
+}
+
+function showFeedback(message, type) {
+    const feedback = document.getElementById('feedback');
+    feedback.textContent = message;
+    feedback.classList.remove('hidden');
+    setTimeout(() => feedback.classList.add('hidden'), 1500);
+}
+
+function finishTest() {
+    document.getElementById('test-complete').classList.remove('hidden');
+    document.getElementById('restart-btn').classList.add('hidden');
+    document.getElementById('final-results').innerHTML = `
+        <div class="test-info">
+            <div class="info-card">
+                <div class="info-value">${partATime.toFixed(1)}s</div>
+                <div class="info-label">Tempo Parte A</div>
+            </div>
+            <div class="info-card">
+                <div class="info-value">${partBTime.toFixed(1)}s</div>
+                <div class="info-label">Tempo Parte B</div>
+            </div>
+            <div class="info-card">
+                <div class="info-value">${(partBTime - partATime).toFixed(1)}s</div>
+                <div class="info-label">Diferença B-A</div>
+            </div>
+            <div class="info-card">
+                <div class="info-value">${errorsA + errorsB}</div>
+                <div class="info-label">Erros Totais</div>
+            </div>
+        </div>
+        <div class="test-info">
+            <div class="info-card">
+                <div class="info-value">${errorsA}</div>
+                <div class="info-label">Erros Parte A</div>
+            </div>
+            <div class="info-card">
+                <div class="info-value">${errorsB}</div>
+                <div class="info-label">Erros Parte B</div>
+            </div>
+        </div>
+    `;
+    submitResults({ time_a: partATime, errors_a: errorsA, time_b: partBTime, errors_b: errorsB });
+}
+
+function submitResults(results) {
+    // Preenche e envia o formulário oculto para a URL existente da view run_tmt
+    document.getElementById('input-time-a').value = results.time_a.toFixed(2);
+    document.getElementById('input-errors-a').value = results.errors_a;
+    document.getElementById('input-time-b').value = results.time_b.toFixed(2);
+    document.getElementById('input-errors-b').value = results.errors_b;
+    document.getElementById('tmt-submit-form').submit();
+}
+
+// Redesenha o canvas ao redimensionar a janela, com debounce
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (document.getElementById('testInterface').style.display !== 'none') {
+            initCanvas();
+        }
+    }, 150);
+});
+</script>
+{% endblock %}
