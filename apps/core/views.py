@@ -12,6 +12,8 @@ from apps.patients.models import Patient
 from apps.assessments.models import Assessment, DigitSpanResult, TMTResult, StroopResult, MeemResult, ClockDrawingResult
 from apps.assessments.services import score_calculator
 from apps.users.models import User
+import logging
+logger = logging.getLogger(__name__)
 
 def home(request):
     """Página inicial do Avivamente.
@@ -40,11 +42,13 @@ def dashboard(request):
         'cancelled_assessments': Assessment.objects.filter(status='CANCELLED').count(),
     }
     
-    # Dados para gráfico de distribuição por teste
+    # Dados para gráfico de distribuição por teste (dinâmico)
     test_stats = {
         'digit_span_count': DigitSpanResult.objects.count(),
         'tmt_count': TMTResult.objects.count(),
         'stroop_count': StroopResult.objects.count(),
+        'meem_count': MeemResult.objects.count(),
+        'clock_count': ClockDrawingResult.objects.count(),
     }
     
     # Dados para gráfico de evolução temporal (últimos 30 dias)
@@ -83,15 +87,42 @@ def dashboard(request):
         elif age >= 61:
             age_stats['age_60_plus'] += 1
     
-    # Dados para gráfico de performance (simulado com dados básicos)
+    # Estatísticas de performance (dinâmicas e normalizadas 0-100)
+    # 1) Taxa de conclusão (já dinâmica)
     total_assessments = stats['total_assessments']
     completed_assessments = stats['completed_assessments']
+    completion_rate = round((completed_assessments / total_assessments * 100) if total_assessments > 0 else 0)
+    
+    # 2) Z-score médio final das avaliações concluídas (se existir)
+    completed_with_final = Assessment.objects.filter(status='COMPLETED').exclude(final_z_score__isnull=True)
+    if completed_with_final.exists():
+        avg_final_z = sum(a.final_z_score for a in completed_with_final) / completed_with_final.count()
+    else:
+        avg_final_z = 0.0
+    # Converter z médio para um índice 0-100 simples (centro em 50)
+    z_score_index = max(0, min(100, round(50 + (avg_final_z * 10))))
+    
+    # 3) Índice de tempo médio do TMT (quanto menor o tempo, melhor)
+    tmt_qs = TMTResult.objects.all()
+    if tmt_qs.exists():
+        avg_tmt_time = sum((t.time_a_seconds or 0) + (t.time_b_seconds or 0) for t in tmt_qs) / tmt_qs.count()
+        # Normalizar assumindo 180s como referência: 0s -> 100, 180s -> 0
+        tmt_time_index = 100 - min(100, round((avg_tmt_time / 180.0) * 100))
+    else:
+        tmt_time_index = 0
+    
+    # 4) Acurácia aproximada baseada em erros do TMT (sem erros = 100)
+    if tmt_qs.exists():
+        no_error_count = sum(1 for t in tmt_qs if (t.errors_a or 0) + (t.errors_b or 0) == 0)
+        accuracy = round((no_error_count / tmt_qs.count()) * 100)
+    else:
+        accuracy = 0
     
     performance_stats = {
-        'avg_z_score': 75,  # Simulado
-        'completion_rate': round((completed_assessments / total_assessments * 100) if total_assessments > 0 else 0),
-        'avg_time': 85,  # Simulado
-        'accuracy': 90,  # Simulado
+        'avg_z_score': z_score_index,
+        'completion_rate': completion_rate,
+        'avg_time': tmt_time_index,
+        'accuracy': accuracy,
     }
     
     context = {
@@ -101,6 +132,12 @@ def dashboard(request):
         'timeline_data': json.dumps(timeline_data),
         'age_stats': age_stats,
         'performance_stats': performance_stats,
+        # JSON para consumo direto no JS
+        'stats_json': json.dumps(stats),
+        'test_stats_json': json.dumps(test_stats),
+        'age_stats_json': json.dumps(age_stats),
+        'performance_stats_json': json.dumps(performance_stats),
+        # 'recent_activities': []  # opcional; template já trata quando vazio
     }
     return render(request, 'core/dashboard.html', context)
 
@@ -399,24 +436,24 @@ def run_tmt(request, assessment_id):
         time_b = float(request.POST.get('time_b', 0))
         errors_b = int(request.POST.get('errors_b', 0))
         
-        # Calcular Z-scores usando dados normativos brasileiros
+        # Calcular Z-scores usando dados normativos (brutos, sem normalização)
         patient = assessment.patient
-        
-        # Usar o calculador de Z-score apropriado
         z_score_a, z_score_b = score_calculator.calculate_tmt_z_scores(
             patient, time_a, time_b, errors_a, errors_b
         )
+        logger.debug(
+            "TMT submission assessment=%s patient_age=%s times=(A:%.2fs,B:%.2fs) errors=(A:%d,B:%d) raw_z=(A:%.3f,B:%.3f)",
+            assessment.id, getattr(patient, 'age', None), time_a, time_b, errors_a, errors_b, z_score_a, z_score_b
+        )
         
-        # Criar ou atualizar resultado
+        # Criar ou atualizar resultado (deixar normalização para o model TMTResult.save)
         tmt_result, created = TMTResult.objects.get_or_create(
             assessment=assessment,
             defaults={
                 'time_a_seconds': time_a,
                 'errors_a': errors_a,
                 'time_b_seconds': time_b,
-                'errors_b': errors_b,
-                'z_score_a': round(z_score_a, 2),
-                'z_score_b': round(z_score_b, 2)
+                'errors_b': errors_b
             }
         )
         
@@ -425,9 +462,9 @@ def run_tmt(request, assessment_id):
             tmt_result.errors_a = errors_a
             tmt_result.time_b_seconds = time_b
             tmt_result.errors_b = errors_b
-            tmt_result.z_score_a = round(z_score_a, 2)
-            tmt_result.z_score_b = round(z_score_b, 2)
-            tmt_result.save()
+        
+        # Save dispara cálculo/normalização em TMTResult.save()
+        tmt_result.save()
         
         # Atualizar status da avaliação
         assessment.status = 'IN_PROGRESS'

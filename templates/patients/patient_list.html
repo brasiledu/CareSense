@@ -38,6 +38,13 @@
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
 }
 
+/* Contêiner responsivo para a tabela (rolagem horizontal quando necessário) */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .table {
     border-collapse: collapse;
     width: 100%;
@@ -89,6 +96,10 @@
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .patient-name-link:hover {
@@ -125,6 +136,21 @@
 .dropdown {
     position: relative;
     display: inline-block;
+}
+
+/* Melhor indicador de urgência no botão de ações */
+.btn-dots.has-urgent-actions {
+    position: relative;
+}
+.btn-dots .urgent-indicator {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background: #dc3545;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #fff;
 }
 
 /* Garantir que a tabela não corte o dropdown */
@@ -173,6 +199,9 @@
     padding: 0.5rem 0;
     margin-top: 2px;
 }
+
+/* Garantir exibição quando dropdown está ativo */
+.dropdown.active .dropdown-menu { display: block; }
 
 /* Responsividade do dropdown */
 @media (max-width: 768px) {
@@ -348,46 +377,67 @@
     font-weight: 500;
 }
 
-/* Responsividade para tablets */
+/* Classes utilitárias para esconder colunas */
 @media (max-width: 1024px) {
+    .hide-tablet { display: none !important; }
     .table {
         font-size: 0.9rem;
     }
-    
     .table th,
     .table td {
         padding: 0.75rem 0.5rem;
     }
-    
-    .table th:nth-child(3),
-    .table td:nth-child(3) {
-        display: none;
-    }
-    
     .search-form {
         flex-direction: column;
         align-items: stretch;
     }
-    
     .search-input {
         min-width: 100%;
     }
 }
 
 @media (max-width: 768px) {
-    .table th:nth-child(4),
-    .table td:nth-child(4) {
-        display: none;
+    .hide-mobile { display: none !important; }
+}
+
+/* Layout empilhado (card-like) para mobile muito estreito */
+@media (max-width: 600px) {
+    .patient-name-link { white-space: normal; }
+    .table thead { display: none; }
+    .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+    .table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .table td {
+        border-bottom: 1px solid #f1f3f5;
+        padding: 0.75rem 1rem;
+        display: grid;
+        grid-template-columns: 40% 1fr;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .table td.actions-cell {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        border-bottom: none;
+        padding-top: 0.5rem;
     }
 }
 </style>
 
 <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h1><i class="fas fa-users"></i> Gerenciamento de Pacientes</h1>
-        <a href="{% url 'patients_dashboard' %}" class="btn" style="background: #28a745; color: white;">
-            <i class="fas fa-chart-line"></i> Dashboard de Evolução
-        </a>
+    <div style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="margin: 0;"><i class="fas fa-users"></i> Gerenciamento de Pacientes</h1>
     </div>
     
     <form method="GET" class="search-form">
@@ -403,6 +453,7 @@
     </form>
     
     {% if patients %}
+        <div class="table-responsive">
         <table class="table">
             <thead>
                 <tr>
@@ -416,19 +467,19 @@
             <tbody>
                 {% for patient in patients %}
                 <tr>
-                    <td>
+                    <td data-label="Paciente">
                         <a href="/assessments/?patient={{ patient.id }}" class="patient-name-link">
                             {{ patient.full_name }}
                         </a>
                     </td>
-                    <td class="hide-mobile">{{ patient.age }} anos</td>
-                    <td class="hide-tablet">{{ patient.education_grade }}</td>
-                    <td class="hide-mobile">
+                    <td class="hide-mobile" data-label="Idade">{{ patient.age }} anos</td>
+                    <td class="hide-tablet" data-label="Escolaridade">{{ patient.education_grade }}</td>
+                    <td class="hide-mobile" data-label="Quarto">
                         <span class="badge badge-info">
                             <i class="fas fa-bed"></i> {{ patient.room_number }}
                         </span>
                     </td>
-                    <td>
+                    <td class="actions-cell" data-label="Ações">
                         <div class="dropdown">
                             <button class="btn-dots{% if patient.pending_assessments_count > 0 or patient.in_progress_assessments_count > 0 %} has-urgent-actions{% endif %}" 
                                     type="button" 
@@ -482,6 +533,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="alert alert-info">
             <i class="fas fa-info-circle"></i>
@@ -528,91 +580,84 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Função para fechar todos os dropdowns
+    // Fechar todos os dropdowns
     function closeAllDropdowns() {
         document.querySelectorAll('.dropdown.active').forEach(dropdown => {
             dropdown.classList.remove('active');
         });
     }
-    
+
+    // Reposicionar menu relativo ao botão
+    function positionDropdown(button, dropdownMenu) {
+        // Resetar posicionamento
+        dropdownMenu.style.left = '';
+        dropdownMenu.style.top = '';
+        dropdownMenu.style.bottom = '';
+        dropdownMenu.style.right = '';
+
+        // Mostrar temporariamente para calcular dimensões
+        dropdownMenu.style.visibility = 'hidden';
+        const buttonRect = button.getBoundingClientRect();
+        const dropdownRect = dropdownMenu.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        let top = buttonRect.bottom + 8; // abaixo por padrão
+        let left = buttonRect.right - dropdownRect.width; // alinhado à direita
+
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+        if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
+            top = buttonRect.top - dropdownRect.height - 8; // acima
+        }
+
+        // Verificar espaço horizontal
+        if (buttonRect.right < dropdownRect.width + 16) {
+            left = buttonRect.left; // alinhar à esquerda do botão
+        }
+
+        // Garantir que não saia da tela
+        if (left < 8) left = 8;
+        if (left + dropdownRect.width > viewportWidth - 8) {
+            left = viewportWidth - dropdownRect.width - 8;
+        }
+
+        dropdownMenu.style.top = `${top}px`;
+        dropdownMenu.style.left = `${left}px`;
+        dropdownMenu.style.visibility = 'visible';
+    }
+
     // Event listeners para os botões de dropdown
     document.querySelectorAll('.btn-dots').forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
-            
             const dropdown = this.closest('.dropdown');
             const dropdownMenu = dropdown.querySelector('.dropdown-menu');
             const isActive = dropdown.classList.contains('active');
-            
+
             closeAllDropdowns();
-            
+
             if (!isActive) {
-                // Resetar posicionamento
-                dropdownMenu.style.left = '';
-                dropdownMenu.style.top = '';
-                dropdownMenu.style.bottom = '';
-                dropdownMenu.style.right = '';
-                
-                // Mostrar temporariamente para calcular dimensões
-                dropdownMenu.style.visibility = 'hidden';
                 dropdown.classList.add('active');
-                
-                const buttonRect = this.getBoundingClientRect();
-                const dropdownRect = dropdownMenu.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                const viewportWidth = window.innerWidth;
-                
-                // Posicionar usando coordenadas fixas
-                let top = buttonRect.bottom + 8; // 8px de margem
-                let left = buttonRect.right - dropdownRect.width; // Alinhar à direita por padrão
-                
-                // Verificar espaço vertical
-                const spaceBelow = viewportHeight - buttonRect.bottom;
-                const spaceAbove = buttonRect.top;
-                
-                if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
-                    // Posicionar acima
-                    top = buttonRect.top - dropdownRect.height - 8;
-                }
-                
-                // Verificar espaço horizontal
-                const spaceLeft = buttonRect.right;
-                
-                if (spaceLeft < dropdownRect.width + 16) {
-                    // Posicionar à esquerda do botão
-                    left = buttonRect.left;
-                }
-                
-                // Garantir que não saia da tela
-                if (left < 8) left = 8;
-                if (left + dropdownRect.width > viewportWidth - 8) {
-                    left = viewportWidth - dropdownRect.width - 8;
-                }
-                
-                // Aplicar posição calculada
-                dropdownMenu.style.top = `${top}px`;
-                dropdownMenu.style.left = `${left}px`;
-                
-                // Restaurar visibilidade
-                dropdownMenu.style.visibility = 'visible';
+                positionDropdown(this, dropdownMenu);
             }
         });
     });
-    
+
     // Fechar dropdowns ao clicar fora
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.dropdown')) {
             closeAllDropdowns();
         }
     });
-    
+
     // Prevenir fechamento ao clicar dentro do dropdown menu
     document.querySelectorAll('.dropdown-menu').forEach(menu => {
         menu.addEventListener('click', function(e) {
             e.stopPropagation();
         });
     });
-    
+
     // Fechar dropdown ao clicar em link
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', function() {
@@ -621,12 +666,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+
     // Melhorar acessibilidade - fechar com ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeAllDropdowns();
         }
+    });
+
+    // Reposicionar dropdown ativo em resize/orientação/scroll
+    function repositionActiveDropdown() {
+        const active = document.querySelector('.dropdown.active');
+        if (!active) return;
+        const btn = active.querySelector('.btn-dots');
+        const menu = active.querySelector('.dropdown-menu');
+        if (btn && menu) {
+            positionDropdown(btn, menu);
+        }
+    }
+
+    window.addEventListener('resize', repositionActiveDropdown);
+    window.addEventListener('orientationchange', repositionActiveDropdown);
+    window.addEventListener('scroll', repositionActiveDropdown, { passive: true });
+
+    // Também observar rolagem de contêineres horizontais da tabela
+    document.querySelectorAll('.table-responsive').forEach(el => {
+        el.addEventListener('scroll', repositionActiveDropdown, { passive: true });
     });
 });
 </script>

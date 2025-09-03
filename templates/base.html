@@ -344,20 +344,7 @@
             font-weight: 700;
         }
         
-        .close-sidebar {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 4px;
-            transition: background 0.3s ease;
-        }
-        
-        .close-sidebar:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
+
         
         .mobile-sidebar-content {
             padding: 1rem 0;
@@ -741,6 +728,7 @@
             color: #721c24;
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
@@ -833,9 +821,6 @@
         <div class="mobile-sidebar" id="mobileSidebar">
             <div class="mobile-sidebar-header">
                 <h3><i class="fas fa-brain"></i> AvivaMente</h3>
-                <button class="close-sidebar" id="closeSidebar">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             
             {% if user.is_authenticated %}
@@ -951,7 +936,6 @@
             // Elementos do menu mobile
             const mobileMenuToggle = document.getElementById('mobileMenuToggle');
             const mobileSidebar = document.getElementById('mobileSidebar');
-            const closeSidebar = document.getElementById('closeSidebar');
             const mobileOverlay = document.getElementById('mobileOverlay');
             
             // Elementos dos dropdowns
@@ -977,10 +961,6 @@
             // Event listeners para menu mobile
             if (mobileMenuToggle) {
                 mobileMenuToggle.addEventListener('click', openMobileMenu);
-            }
-            
-            if (closeSidebar) {
-                closeSidebar.addEventListener('click', closeMobileMenu);
             }
             
             if (mobileOverlay) {

@@ -3,6 +3,9 @@ import os
 from django.conf import settings
 from django.utils import timezone
 from .models import Assessment, DigitSpanResult, TMTResult, StroopResult
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AssessmentScoreCalculator:
     """
@@ -177,15 +180,20 @@ class AssessmentScoreCalculator:
         """
         age_group = self._get_age_group(patient.age)
         education_group = self._get_education_group(patient)
-        
-        # Dados normativos para TMT-A
-        tmt_a_norms = self.normative_data["tmt_a"][age_group][education_group]
+        try:
+            tmt_a_norms = self.normative_data["tmt_a"][age_group][education_group]
+            tmt_b_norms = self.normative_data["tmt_b"][age_group][education_group]
+        except KeyError as e:
+            logger.error("Normas TMT faltando para age_group=%s education_group=%s: %s", age_group, education_group, e)
+            raise
         z_score_a = self.calculate_z_score(time_a, tmt_a_norms["mean"], tmt_a_norms["sd"])
-        
-        # Dados normativos para TMT-B
-        tmt_b_norms = self.normative_data["tmt_b"][age_group][education_group]
         z_score_b = self.calculate_z_score(time_b, tmt_b_norms["mean"], tmt_b_norms["sd"])
-        
+        logger.debug(
+            "calc_tmt_z | age_group=%s edu=%s | A: time=%.2fs mean=%.2f sd=%.2f z=%.3f | B: time=%.2fs mean=%.2f sd=%.2f z=%.3f",
+            age_group, education_group,
+            float(time_a), float(tmt_a_norms["mean"]), float(tmt_a_norms["sd"]), float(z_score_a),
+            float(time_b), float(tmt_b_norms["mean"]), float(tmt_b_norms["sd"]), float(z_score_b)
+        )
         return z_score_a, z_score_b
     
     def calculate_digit_span_z_score(self, patient, total_score):
@@ -239,7 +247,7 @@ class AssessmentScoreCalculator:
         """
         try:
             age = getattr(patient, 'age', 65)
-            education_years = getattr(patient, 'education_years', 8)
+            education_years = getattr(patient, 'education_years', 8) or 8
             
             # Dados normativos aproximados para Clock Drawing Test
             # Pontuação média varia por idade e escolaridade
@@ -302,19 +310,21 @@ class AssessmentScoreCalculator:
             # TMT - Peso: 2.0 (função executiva central)
             if hasattr(assessment, 'tmt_result'):
                 tmt_result = assessment.tmt_result
-                z_score_a, z_score_b = self.calculate_tmt_z_scores(
-                    patient, 
-                    tmt_result.time_a_seconds, 
+                z_score_a_raw, z_score_b_raw = self.calculate_tmt_z_scores(
+                    patient,
+                    tmt_result.time_a_seconds,
                     tmt_result.time_b_seconds,
                     tmt_result.errors_a,
                     tmt_result.errors_b
                 )
-                tmt_result.z_score_a = z_score_a
-                tmt_result.z_score_b = z_score_b
-                tmt_result.save()
-                # Normalizar para déficit (inverter sinais - maior tempo = pior = z negativo)
-                normalized_a = -abs(z_score_a) if z_score_a > 0 else z_score_a
-                normalized_b = -abs(z_score_b) if z_score_b > 0 else z_score_b
+                # Persistir z-scores normalizados para manter consistência (maior tempo = pior = negativo)
+                normalized_a = -abs(z_score_a_raw) if z_score_a_raw > 0 else z_score_a_raw
+                normalized_b = -abs(z_score_b_raw) if z_score_b_raw > 0 else z_score_b_raw
+                # Atualizar somente se mudaram ou estiverem vazios
+                if tmt_result.z_score_a != normalized_a or tmt_result.z_score_b != normalized_b:
+                    tmt_result.z_score_a = round(normalized_a, 2)
+                    tmt_result.z_score_b = round(normalized_b, 2)
+                    tmt_result.save()
                 # Média ponderada TMT-A e TMT-B (TMT-B tem mais peso)
                 tmt_composite = (normalized_a * 0.4 + normalized_b * 0.6)
                 test_scores['tmt'] = {'score': tmt_composite, 'weight': 2.0}

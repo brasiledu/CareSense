@@ -18,7 +18,7 @@
     
     .patient-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 1.5rem;
         margin: 2rem 0;
     }
@@ -122,27 +122,6 @@
         100% { transform: translate(-50%, -50%) rotate(360deg); }
     }
     
-    .patient-card::after {
-        content: '▶ Toque para iniciar avaliação';
-        position: absolute;
-        bottom: 0.5rem;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(52, 152, 219, 0.9);
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        opacity: 0;
-        transition: all 0.3s ease;
-        pointer-events: none;
-    }
-    
-    .patient-card:hover::after {
-        opacity: 1;
-    }
-    
     .search-bar {
         background: white;
         border-radius: 12px;
@@ -187,11 +166,18 @@
             padding: 1.5rem;
         }
     }
+
+    @media (max-width: 480px) {
+        .patient-card { padding: 1rem; min-height: 140px; }
+        .patient-card .patient-name { font-size: 1.2rem; }
+        .patient-card .patient-info { font-size: 0.95rem; }
+        .patient-card .assessment-info { font-size: 0.85rem; }
+        .patient-card .status-badge { font-size: 0.7rem; padding: 0.35rem 0.7rem; }
+    }
 </style>
 
 <div class="tablet-header">
     <h1><i class="fas fa-clipboard-check"></i> Nova Avaliação Neuropsicológica</h1>
-    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Toque no paciente para iniciar avaliação imediatamente</p>
 </div>
 
 <div class="search-bar">

@@ -78,7 +78,7 @@
 /* Grid de gráficos */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
@@ -373,6 +373,14 @@ document.addEventListener('DOMContentLoaded', function() {
         secondary: '#6c757d'
     };
 
+    // Dados do backend (JSON string -> objeto)
+    const stats = JSON.parse('{{ stats_json|escapejs }}');
+    const testStats = JSON.parse('{{ test_stats_json|escapejs }}');
+    const timelineLabels = JSON.parse('{{ timeline_labels|escapejs }}');
+    const timelineData = JSON.parse('{{ timeline_data|escapejs }}');
+    const ageStats = JSON.parse('{{ age_stats_json|escapejs }}');
+    const perf = JSON.parse('{{ performance_stats_json|escapejs }}');
+
     // Gráfico 1: Status das Avaliações
     const statusChart = document.getElementById('assessmentStatusChart');
     if (statusChart) {
@@ -381,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: ['Concluídas', 'Pendentes', 'Em Andamento', 'Canceladas'],
                 datasets: [{
-                    data: [15, 8, 3, 1], // Valores de exemplo
+                    data: [stats.completed_assessments || 0, stats.pending_assessments || 0, stats.in_progress_assessments || 0, stats.cancelled_assessments || 0],
                     backgroundColor: [colors.success, colors.warning, colors.primary, colors.danger],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -393,60 +401,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true
-                        }
+                        labels: { padding: 15, usePointStyle: true }
                     }
                 }
             }
         });
     }
 
-    // Gráfico 2: Distribuição por Teste
+    // Gráfico 2: Distribuição por Teste (inclui MEEM e Relógio)
     const testChart = document.getElementById('testDistributionChart');
     if (testChart) {
         new Chart(testChart, {
             type: 'bar',
             data: {
-                labels: ['Digit Span', 'TMT', 'Stroop'],
+                labels: ['Digit Span', 'TMT', 'Stroop', 'MEEM', 'Relógio'],
                 datasets: [{
                     label: 'Avaliações',
-                    data: [12, 8, 7], // Valores de exemplo
-                    backgroundColor: [colors.primary, colors.success, colors.warning],
+                    data: [
+                        testStats.digit_span_count || 0,
+                        testStats.tmt_count || 0,
+                        testStats.stroop_count || 0,
+                        testStats.meem_count || 0,
+                        testStats.clock_count || 0
+                    ],
+                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.secondary, '#17a2b8'],
                     borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
                 }
             }
         });
     }
 
-    // Gráfico 3: Evolução Temporal
+    // Gráfico 3: Evolução Temporal (labels e dados do backend)
     const timelineChart = document.getElementById('timelineChart');
     if (timelineChart) {
         new Chart(timelineChart, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                labels: timelineLabels,
                 datasets: [{
                     label: 'Avaliações Criadas',
-                    data: [3, 5, 2, 8, 4, 6],
+                    data: timelineData,
                     borderColor: colors.primary,
                     backgroundColor: colors.primary + '20',
                     fill: true,
@@ -456,24 +458,15 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
                 }
             }
         });
     }
 
-    // Gráfico 4: Faixa Etária
+    // Gráfico 4: Faixa Etária (dados reais)
     const ageChart = document.getElementById('ageDistributionChart');
     if (ageChart) {
         new Chart(ageChart, {
@@ -481,7 +474,12 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: ['18-30 anos', '31-45 anos', '46-60 anos', '60+ anos'],
                 datasets: [{
-                    data: [8, 12, 6, 1],
+                    data: [
+                        ageStats.age_18_30 || 0,
+                        ageStats.age_31_45 || 0,
+                        ageStats.age_46_60 || 0,
+                        ageStats.age_60_plus || 0
+                    ],
                     backgroundColor: [colors.primary, colors.success, colors.warning, colors.danger],
                     borderWidth: 2,
                     borderColor: '#fff'
@@ -493,26 +491,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: {
-                            padding: 15,
-                            usePointStyle: true
-                        }
+                        labels: { padding: 15, usePointStyle: true }
                     }
                 }
             }
         });
     }
 
-    // Gráfico 5: Performance
+    // Gráfico 5: Performance (índices 0-100 do backend)
     const performanceChart = document.getElementById('performanceChart');
     if (performanceChart) {
         new Chart(performanceChart, {
             type: 'radar',
             data: {
-                labels: ['Z-Score Médio', 'Taxa Conclusão', 'Tempo Médio', 'Precisão'],
+                labels: ['Z-Score Médio', 'Taxa Conclusão', 'Tempo Médio (TMT)', 'Acurácia (TMT)'],
                 datasets: [{
                     label: 'Performance',
-                    data: [75, 85, 65, 90],
+                    data: [perf.avg_z_score || 0, perf.completion_rate || 0, perf.avg_time || 0, perf.accuracy || 0],
                     backgroundColor: colors.primary + '20',
                     borderColor: colors.primary,
                     borderWidth: 2
@@ -521,17 +516,8 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
+                plugins: { legend: { display: false } },
+                scales: { r: { beginAtZero: true, max: 100 } }
             }
         });
     }

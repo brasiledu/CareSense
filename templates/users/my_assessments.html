@@ -647,6 +647,47 @@
         font-size: 1rem;
     }
 }
+
+/* Contêiner responsivo para a tabela (rolagem horizontal quando necessário) */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Layout empilhado (card-like) para telas muito estreitas */
+@media (max-width: 600px) {
+    .table thead { display: none; }
+    .table, .table tbody, .table tr, .table td { display: block; width: 100%; }
+    .table tr {
+        margin-bottom: 1rem;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        background: #fff;
+    }
+    .table td {
+        border-bottom: 1px solid #f1f3f5;
+        padding: 0.75rem 1rem;
+        display: grid;
+        grid-template-columns: 40% 1fr;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .table td.actions-cell {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        border-bottom: none;
+        padding-top: 0.5rem;
+    }
+}
 </style>
 
 <div class="page-header">
@@ -725,7 +766,7 @@
     </div>
     
     {% if assessments %}
-        <div class="table-container">
+        <div class="table-responsive table-container">
             <table class="table">
                 <thead>
                     <tr>
@@ -740,12 +781,12 @@
                 <tbody>
                     {% for assessment in assessments %}
                     <tr>
-                        <td>
+                        <td data-label="Paciente">
                             <a href="{% url 'patient_detail' assessment.patient.id %}" class="patient-name">
                                 {{ assessment.patient.full_name }}
                             </a>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             {% if assessment.status == 'PENDING' %}
                                 <span class="badge badge-pending">Pendente</span>
                             {% elif assessment.status == 'IN_PROGRESS' %}
@@ -756,7 +797,7 @@
                                 <span class="badge badge-cancelled">Cancelada</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td data-label="Risco">
                             {% if assessment.final_risk_score %}
                                 {% if assessment.final_risk_score == 'LOW' %}
                                     <span class="badge badge-completed">Baixo</span>
@@ -771,17 +812,17 @@
                                 <span style="color: #6c757d;">-</span>
                             {% endif %}
                         </td>
-                        <td class="hide-mobile">
+                        <td class="hide-mobile" data-label="Criada em">
                             {{ assessment.created_at|date:"d/m/Y H:i" }}
                         </td>
-                        <td class="hide-tablet">
+                        <td class="hide-tablet" data-label="Concluída em">
                             {% if assessment.completed_at %}
                                 {{ assessment.completed_at|date:"d/m/Y H:i" }}
                             {% else %}
                                 <span style="color: #6c757d;">-</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="actions-cell" data-label="Ações">
                             <div class="dropdown">
                                 <button class="btn-dots{% if assessment.status == 'PENDING' or assessment.status == 'IN_PROGRESS' %} has-urgent-actions{% endif %}" 
                                         type="button" 
@@ -851,89 +892,88 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Função para fechar todos os dropdowns
+    // Fechar todos os dropdowns
     function closeAllDropdowns() {
         document.querySelectorAll('.dropdown.active').forEach(dropdown => {
             dropdown.classList.remove('active');
         });
     }
-    
-    // Event listeners para os botões de dropdown
+
+    // Reposicionar menu relativo ao botão com verificação de limites
+    function positionDropdown(button, dropdownMenu) {
+        // Resetar posicionamento
+        dropdownMenu.style.left = '';
+        dropdownMenu.style.top = '';
+        dropdownMenu.style.bottom = '';
+        dropdownMenu.style.right = '';
+
+        // Mostrar temporariamente para calcular dimensões
+        dropdownMenu.style.visibility = 'hidden';
+        const buttonRect = button.getBoundingClientRect();
+        const dropdownRect = dropdownMenu.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        let top = buttonRect.bottom + 8; // abaixo por padrão
+        let left = buttonRect.right - dropdownRect.width; // alinhado à direita do botão
+
+        // Espaços disponíveis
+        const spaceBelow = viewportHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+
+        if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
+            // posiciona acima
+            top = buttonRect.top - dropdownRect.height - 8;
+        }
+
+        // Verificar espaço horizontal e ajustar
+        if (buttonRect.right < dropdownRect.width + 16) {
+            left = buttonRect.left; // alinhar à esquerda se não couber à direita
+        }
+
+        // Garantir que fique na tela
+        if (left < 8) left = 8;
+        if (left + dropdownRect.width > viewportWidth - 8) {
+            left = viewportWidth - dropdownRect.width - 8;
+        }
+
+        dropdownMenu.style.top = `${top}px`;
+        dropdownMenu.style.left = `${left}px`;
+        dropdownMenu.style.visibility = 'visible';
+    }
+
+    // Clique nos botões de dropdown
     document.querySelectorAll('.btn-dots').forEach(button => {
         button.addEventListener('click', function(e) {
             e.stopPropagation();
-            
             const dropdown = this.closest('.dropdown');
             const dropdownMenu = dropdown.querySelector('.dropdown-menu');
             const isActive = dropdown.classList.contains('active');
-            
+
             closeAllDropdowns();
-            
+
             if (!isActive) {
-                // Resetar classes de posicionamento
-                dropdown.classList.remove('dropdown-up', 'dropdown-right');
-                dropdownMenu.style.left = '';
-                dropdownMenu.style.top = '';
-                dropdownMenu.style.bottom = '';
-                dropdownMenu.style.right = '';
-                
-                // Mostrar temporariamente para calcular dimensões
-                dropdownMenu.style.visibility = 'hidden';
                 dropdown.classList.add('active');
-                
-                const buttonRect = this.getBoundingClientRect();
-                const dropdownRect = dropdownMenu.getBoundingClientRect();
-                const viewportHeight = window.innerHeight;
-                const viewportWidth = window.innerWidth;
-                
-                // Posicionar usando coordenadas fixas
-                let top = buttonRect.bottom + 8; // 8px de margem
-                let left = buttonRect.left;
-                
-                // Verificar espaço vertical
-                const spaceBelow = viewportHeight - buttonRect.bottom;
-                const spaceAbove = buttonRect.top;
-                
-                if (spaceBelow < dropdownRect.height + 16 && spaceAbove > spaceBelow) {
-                    // Posicionar acima
-                    top = buttonRect.top - dropdownRect.height - 8;
-                    dropdown.classList.add('dropdown-up');
-                }
-                
-                // Verificar espaço horizontal
-                const spaceRight = viewportWidth - buttonRect.left;
-                
-                if (spaceRight < dropdownRect.width + 16) {
-                    // Posicionar à direita do botão
-                    left = buttonRect.right - dropdownRect.width;
-                    dropdown.classList.add('dropdown-right');
-                }
-                
-                // Aplicar posição calculada
-                dropdownMenu.style.top = `${top}px`;
-                dropdownMenu.style.left = `${left}px`;
-                
-                // Restaurar visibilidade
-                dropdownMenu.style.visibility = 'visible';
+                positionDropdown(this, dropdownMenu);
             }
         });
     });
-    
-    // Fechar dropdowns ao clicar fora
+
+    // Fechar ao clicar fora
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.dropdown')) {
             closeAllDropdowns();
         }
     });
-    
-    // Prevenir fechamento ao clicar dentro do dropdown menu
+
+    // Prevenir fechamento ao clicar dentro do menu
     document.querySelectorAll('.dropdown-menu').forEach(menu => {
         menu.addEventListener('click', function(e) {
             e.stopPropagation();
         });
     });
-    
-    // Fechar dropdown ao clicar em link
+
+    // Fechar ao clicar em link do menu
     document.querySelectorAll('.dropdown-item').forEach(item => {
         item.addEventListener('click', function() {
             if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
@@ -941,14 +981,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Melhorar acessibilidade - fechar com ESC
+
+    // Acessibilidade - fechar com ESC
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeAllDropdowns();
         }
     });
-    
+
+    // Reposicionar dropdown ativo em resize/orientação/scroll
+    function repositionActiveDropdown() {
+        const active = document.querySelector('.dropdown.active');
+        if (!active) return;
+        const btn = active.querySelector('.btn-dots');
+        const menu = active.querySelector('.dropdown-menu');
+        if (btn && menu) {
+            positionDropdown(btn, menu);
+        }
+    }
+
+    window.addEventListener('resize', repositionActiveDropdown);
+    window.addEventListener('orientationchange', repositionActiveDropdown);
+    window.addEventListener('scroll', repositionActiveDropdown, { passive: true });
+    document.querySelectorAll('.table-responsive').forEach(el => {
+        el.addEventListener('scroll', repositionActiveDropdown, { passive: true });
+    });
+
     // Auto-submit do formulário de filtro quando os campos mudarem
     const filterInputs = document.querySelectorAll('#filterForm select, #filterForm input');
     filterInputs.forEach(input => {

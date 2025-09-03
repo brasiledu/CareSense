@@ -93,18 +93,22 @@ class DigitSpanResult(models.Model):
     )
     
     forward_score = models.IntegerField(
+        default=0,
         verbose_name='Pontuação Direta'
     )
     
     forward_span = models.IntegerField(
+        default=0,
         verbose_name='Span Direto'
     )
     
     backward_score = models.IntegerField(
+        default=0,
         verbose_name='Pontuação Inversa'
     )
     
     backward_span = models.IntegerField(
+        default=0,
         verbose_name='Span Inverso'
     )
     
@@ -126,7 +130,29 @@ class DigitSpanResult(models.Model):
     @property
     def total_score(self):
         """Retorna a pontuação total (forward + backward)"""
-        return self.forward_score + self.backward_score
+        forward = self.forward_score or 0
+        backward = self.backward_score or 0
+        return forward + backward
+    
+    def save(self, *args, **kwargs):
+        """Calcula automaticamente o Z-score normalizado"""
+        # Calcular Z-score se ainda não foi calculado
+        if self.z_score is None and self.total_score > 0:
+            from .services import AssessmentScoreCalculator
+            calculator = AssessmentScoreCalculator()
+            
+            # Calcular Z-score bruto
+            raw_z_score = calculator.calculate_digit_span_z_score(
+                self.assessment.patient, 
+                self.total_score
+            )
+            
+            # Normalizar para déficit (Digit Span é teste de performance)
+            self.z_score = calculator.normalize_z_score_for_deficit(
+                raw_z_score, 'performance'
+            )
+        
+        super().save(*args, **kwargs)
 
 class TMTResult(models.Model):
     assessment = models.OneToOneField(
@@ -174,6 +200,32 @@ class TMTResult(models.Model):
     
     def __str__(self):
         return f"TMT - {self.assessment.patient.full_name}"
+    
+    def save(self, *args, **kwargs):
+        """Calcula automaticamente os Z-scores normalizados"""
+        # Calcular Z-scores se ainda não foram calculados
+        if (self.z_score_a is None or self.z_score_b is None) and self.time_a_seconds and self.time_b_seconds:
+            from .services import AssessmentScoreCalculator
+            calculator = AssessmentScoreCalculator()
+            
+            # Calcular Z-scores brutos
+            raw_z_score_a, raw_z_score_b = calculator.calculate_tmt_z_scores(
+                self.assessment.patient, 
+                self.time_a_seconds, 
+                self.time_b_seconds,
+                self.errors_a,
+                self.errors_b
+            )
+            
+            # Normalizar para déficit (TMT são testes de tempo)
+            self.z_score_a = calculator.normalize_z_score_for_deficit(
+                raw_z_score_a, 'time'
+            )
+            self.z_score_b = calculator.normalize_z_score_for_deficit(
+                raw_z_score_b, 'time'
+            )
+        
+        super().save(*args, **kwargs)
 
 class StroopResult(models.Model):
     assessment = models.OneToOneField(
@@ -754,14 +806,4 @@ class ClockDrawingResult(models.Model):
         elif self.numbers_score >= 2:
             feedback.append("△ Números presentes mas com alguns erros")
         else:
-            feedback.append("✗ Problemas significativos com os números")
-        
-        # Análise dos ponteiros
-        if self.hands_score == 4:
-            feedback.append("✓ Ponteiros corretos indicando a hora exata")
-        elif self.hands_score >= 2:
-            feedback.append("△ Ponteiros presentes mas com imprecisões")
-        else:
-            feedback.append("✗ Problemas significativos com os ponteiros")
-        
-        return feedback
+            feedback.append("✗ Números ausentes ou incorretos")
